@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>CARDIO 11/25 26</title>
+<style>/* Lecteur autonome d'une annale exportée — calqué sur le lecteur du site :
+   fond aurore, barre du haut et panneau de navigation qui restent à l'écran. */
+:root {
+  color-scheme: light;
+  --ink: #0f1b3d;
+  --muted: #5b6785;
+  --line: rgba(15, 27, 61, .10);
+  --card: rgba(255, 255, 255, .78);
+  --navy: #0b1f4f;
+  --accent: #0ea5c6;
+  --sel: #2f5bd8;
+  --ok: #16a34a;
+  --part: #f59e0b;
+  --bad: #dc2626;
+  --rec: #2563eb;
+  --top: 76px;
+  --surface: rgba(255, 255, 255, .76);
+  --surface-2: rgba(255, 255, 255, .7);
+  --edge: rgba(255, 255, 255, .85);
+  --solid: #ffffff;
+  --tint: rgba(15, 27, 61, .07);
+  --line-strong: rgba(15, 27, 61, .15);
+  --box-line: #3b4664;
+  --switch-off: #d4d9e4;
+  --ok-ink: #11713a; --part-ink: #8a5a00; --bad-ink: #a11d1d; --rec-ink: #1d4ed8;
+  --part-bg: #fff4dc;
+  --aurora: radial-gradient(60rem 30rem at 0% 0%, rgba(110, 231, 196, .55), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 0%, rgba(125, 211, 252, .55), transparent 60%),
+    radial-gradient(60rem 40rem at 40% 60%, rgba(196, 181, 253, .45), transparent 65%),
+    radial-gradient(50rem 40rem at 100% 100%, rgba(165, 243, 252, .5), transparent 60%),
+    #eef6fb;
+  font: 15px/1.55 "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-padding-top: calc(var(--top) + 24px); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--aurora);
+  background-attachment: fixed;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.icon { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 3px solid rgba(47, 91, 216, .45); outline-offset: 2px; }
+
+/* --- Barre du haut, collée en haut de l'écran --- */
+.topbar {
+  position: sticky; top: 12px; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  width: min(100% - 24px, 1180px); margin: 12px auto 0; padding: .8rem 1rem .8rem 1.25rem;
+  border: 1px solid var(--edge); border-radius: 22px;
+  background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(15, 27, 61, .18);
+}
+.titles { min-width: 0; }
+.topbar h1 { margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { display: flex; align-items: center; gap: .6rem; margin: .2rem 0 0; color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.pill { white-space: nowrap; padding: .1rem .55rem; border-radius: 999px; background: var(--tint); color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tools { display: flex; align-items: center; gap: .5rem; flex: none; }
+.chip {
+  display: inline-flex; align-items: center; gap: .45rem; height: 38px; padding: 0 .85rem;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2);
+  font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  box-shadow: 0 4px 12px -8px rgba(15, 27, 61, .3); transition: transform .12s, background-color .12s;
+}
+.chip:active { transform: scale(.96); }
+.clock[aria-pressed="true"] { border-color: rgba(245, 158, 11, .55); background: var(--part-bg); color: var(--part-ink); }
+.nav-toggle { border-color: rgba(47, 91, 216, .45); background: rgba(47, 91, 216, .08); color: var(--sel); }
+.nav-toggle .count {
+  display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 .4rem; border-radius: 999px;
+  background: linear-gradient(135deg, #22c4c4, #0ea5c6); color: white; font-size: .72rem; font-weight: 800;
+}
+
+/* --- Mise en page : questions à gauche, navigation à droite --- */
+.layout { width: min(100% - 24px, 1180px); margin: 18px auto 40px; }
+@media (min-width: 1024px) {
+  body.panel-open .layout { display: grid; grid-template-columns: minmax(0, 1fr) 16.5rem; gap: 20px; align-items: start; }
+  #panel { position: sticky; top: calc(var(--top) + 24px); max-height: calc(100vh - var(--top) - 40px); overflow: auto; }
+  body:not(.panel-open) #panel { display: none; }
+  .scrim { display: none; }
+}
+@media (max-width: 1023.98px) {
+  #panel {
+    position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: min(88vw, 20rem); overflow: auto;
+    border-radius: 24px 0 0 24px; transform: translateX(105%); transition: transform .25s ease;
+  }
+  body.panel-open #panel { transform: none; }
+  .scrim { position: fixed; inset: 0; z-index: 30; background: rgba(15, 27, 61, .25); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  body.panel-open .scrim { opacity: 1; pointer-events: auto; }
+  .nav-toggle .label { display: none; }
+}
+
+/* --- Panneau de navigation --- */
+#panel {
+  padding: 14px; border: 1px solid var(--edge); border-radius: 24px;
+  background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(15, 27, 61, .18);
+}
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.panel-head h2 { margin: 0; font-size: .92rem; font-weight: 800; }
+.panel-head p { margin: .1rem 0 0; }
+.icon-button {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--muted);
+}
+.icon-button:hover { color: var(--ink); }
+.progress { height: 5px; margin: .75rem 0; border-radius: 999px; background: var(--tint); overflow: hidden; }
+.progress div { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6d8cf5, #22c4c4); transition: width .3s; }
+.tiles-scroll { max-height: 16rem; overflow: auto; padding-right: 4px; }
+.group + .group { margin-top: .6rem; }
+.group-label { margin-bottom: .3rem; font-size: .72rem; font-weight: 800; color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.tile {
+  position: relative; height: 36px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface-2); color: var(--muted); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  transition: transform .12s;
+}
+.tile:not(:disabled):hover { transform: translateY(-1px); }
+.tile:disabled { opacity: .5; }
+.tile[aria-current] { border: 2px solid var(--navy); color: var(--ink); box-shadow: 0 0 0 3px rgba(11, 31, 79, .12); }
+.tile.correct { border-color: rgba(22, 163, 74, .45); background: rgba(22, 163, 74, .14); color: var(--ok-ink); }
+.tile.partial { border-color: rgba(245, 158, 11, .5); background: rgba(245, 158, 11, .15); color: var(--part-ink); }
+.tile.wrong { border-color: rgba(220, 38, 38, .45); background: rgba(220, 38, 38, .12); color: var(--bad-ink); }
+.tile.recorded { border-color: rgba(37, 99, 235, .45); background: rgba(37, 99, 235, .12); color: var(--rec-ink); }
+.tile.draft::after { content: ""; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--sel); box-shadow: 0 0 0 2px white; }
+.tile-lock { position: absolute; top: -5px; right: -5px; width: 13px; height: 13px; padding: 1px; border-radius: 50%; background: var(--solid); color: var(--muted); }
+.tile-flag { position: absolute; top: -4px; left: -4px; width: 11px; height: 11px; border-radius: 3px; background: var(--part); box-shadow: 0 0 0 2px white; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 55%, 0 70%); }
+.legend { display: flex; flex-wrap: wrap; gap: .25rem .7rem; margin-top: .7rem; font-size: .72rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.correct { background: var(--ok); } .dot.partial { background: var(--part); } .dot.wrong { background: var(--bad); }
+.dot.recorded { background: var(--rec); } .dot.flagged { background: var(--part); border-radius: 2px; }
+.segment { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-top: .8rem; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); }
+.segment button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: .8rem; font-weight: 700; }
+.segment button.active { background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+.row {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 40px; margin-top: .55rem;
+  padding: .45rem .8rem; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2);
+  color: var(--ink); font-size: .8rem; font-weight: 600; text-align: left;
+}
+.row-text { display: inline-flex; align-items: center; gap: .45rem; }
+.switch { position: relative; width: 34px; height: 20px; flex: none; border-radius: 999px; background: var(--switch-off); transition: background-color .15s; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--solid); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: left .15s; }
+.switch.on { background: var(--sel); }
+.switch.on::after { left: 16px; }
+.finish { width: 100%; height: 42px; margin-top: .7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--muted); font-weight: 700; }
+.finish.ready { border: 0; background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+
+/* --- Carte de question --- */
+main#annale { min-width: 0; }
+main#annale > * + * { margin-top: 16px; }
+.card {
+  padding: clamp(18px, 3.2vw, 30px); border: 1px solid var(--edge); border-radius: 26px;
+  background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 14px 34px -16px rgba(15, 27, 61, .2);
+}
+.card.current { box-shadow: 0 0 0 2px rgba(47, 91, 216, .35), 0 14px 34px -16px rgba(15, 27, 61, .2); }
+.card.locked { display: flex; align-items: center; gap: .9rem; padding: 16px 20px; background: var(--surface-2); }
+.card.locked p { margin: .1rem 0 0; }
+.lock-badge { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--tint); color: var(--muted); }
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+.section-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .7rem; border-radius: 999px; background: var(--tint); font-size: .78rem; font-weight: 700; }
+.section-pill .icon { color: #e11d48; }
+.flag { border: 0; background: none; width: 34px; height: 34px; border-radius: 50%; }
+.flag.on { background: rgba(245, 158, 11, .15); color: var(--part-ink); }
+.flag.on .icon { fill: currentColor; }
+.context { margin: 0 0 1rem; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.prompt { margin: 0; font-size: clamp(1.05rem, 2.3vw, 1.2rem); font-weight: 750; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qnum { color: var(--accent); font-weight: 800; }
+.prompt:focus, .correction:focus, .result h2:focus { outline: none; }
+.state { display: flex; align-items: center; gap: .4rem; margin: .45rem 0 1.1rem; font-size: .8rem; color: var(--muted); }
+.state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.state.done { color: var(--rec); }
+.figures img, .correction img { display: block; max-width: 100%; max-height: 22rem; height: auto; margin: .5rem auto; border-radius: 14px; border: 1px solid var(--line); background: var(--solid); }
+fieldset.options { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.option {
+  position: relative; display: flex; align-items: center; gap: .9rem; margin: 0 0 12px; padding: .95rem 1rem;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--surface-2); cursor: pointer;
+  transition: border-color .12s, background-color .12s;
+}
+.option:hover { border-color: rgba(47, 91, 216, .35); }
+.option input { position: absolute; opacity: 0; pointer-events: none; }
+.letter { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border: 1px solid var(--line); border-radius: 8px; background: var(--solid); font-size: .74rem; font-weight: 800; color: var(--muted); }
+.box { width: 22px; height: 22px; flex: none; border: 1.5px solid var(--box-line); border-radius: 6px; background: var(--solid); }
+.box.round { border-radius: 50%; }
+.option input:checked ~ .box { border-color: var(--sel); background: var(--sel); box-shadow: inset 0 0 0 3px white; }
+.option:has(input:checked) { border-color: rgba(47, 91, 216, .55); background: rgba(47, 91, 216, .07); }
+.option:has(input:focus-visible) { outline: 3px solid rgba(47, 91, 216, .45); outline-offset: 2px; }
+.option-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-weight: 500; }
+.option-text img { display: block; max-width: 100%; max-height: 18rem; margin-top: .5rem; border-radius: 10px; }
+.option[data-status="attendue"] { border-color: rgba(22, 163, 74, .5); background: rgba(22, 163, 74, .09); }
+.option[data-status="non attendue"] { border-color: rgba(220, 38, 38, .45); background: rgba(220, 38, 38, .07); }
+.option[data-status="neutralisée"] { background: var(--tint); }
+.verdict { display: block; margin-top: .2rem; font-weight: 700; font-size: .75rem; }
+[data-status="attendue"] .verdict { color: var(--ok-ink); } [data-status="non attendue"] .verdict { color: var(--bad-ink); }
+.free-answer { display: grid; gap: .4rem; margin-bottom: 1rem; }
+.free-answer input { width: 100%; height: 48px; padding: 0 1rem; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--solid); font: inherit; color: inherit; }
+.free-answer input.correct { border: 2px solid var(--ok); background: rgba(22, 163, 74, .08); color: var(--ok-ink); }
+.free-answer input.partial { border: 2px solid var(--part); background: rgba(245, 158, 11, .1); color: var(--part-ink); }
+.free-answer input.wrong { border: 2px solid var(--bad); background: rgba(220, 38, 38, .07); color: var(--bad-ink); }
+.submit {
+  width: 100%; height: 52px; margin-top: .4rem; border: 0; border-radius: 999px;
+  background: linear-gradient(90deg, #3f5fb5, #2fb9c6); color: white; font-weight: 800; font-size: 1rem;
+  box-shadow: 0 10px 24px -12px rgba(47, 91, 216, .6); transition: transform .12s, opacity .12s;
+}
+.submit:disabled { opacity: .55; box-shadow: none; }
+.submit:not(:disabled):active { transform: scale(.99); }
+.correction { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid rgba(47, 91, 216, .2); border-radius: 18px; background: rgba(47, 91, 216, .05); }
+.correction h3 { margin: 0 0 .3rem; font-size: .95rem; }
+.correction p { margin: .4rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.points { font-weight: 800; }
+.points.correct { color: var(--ok-ink); } .points.partial { color: var(--part-ink); } .points.wrong { color: var(--bad-ink); }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; margin-top: 1.2rem; }
+.pager-right { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .6rem; }
+.ghost, .primary {
+  display: inline-flex; align-items: center; gap: .35rem; height: 42px; padding: 0 1.1rem; border-radius: 999px; font-weight: 700; font-size: .88rem;
+}
+.ghost { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.ghost:disabled { opacity: .45; }
+.primary { border: 0; background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+.lock-hint { display: inline-flex; align-items: center; gap: .3rem; }
+.link { margin: .2rem 0 .6rem; border: 0; background: none; color: var(--sel); font-weight: 600; padding: 0; }
+.result { text-align: center; }
+.result h2 { margin: 0; font-size: 1.4rem; }
+.big { font-size: 2rem; font-weight: 800; margin: .6rem 0; }
+.result .primary { margin-top: .6rem; }
+.localisation { margin: .7rem 0; }
+.zone { display: inline-block; position: relative; padding: 0; border: 0; max-width: 100%; background: none; }
+button.zone { cursor: crosshair; }
+.zone img { display: block; max-width: 100%; margin: 0; border-radius: 12px; }
+.point { position: absolute; transform: translate(-50%, -50%); min-width: 1.6rem; border: 2px solid white; border-radius: 50%; background: var(--sel); color: white; text-align: center; pointer-events: none; }
+.point.cursor { visibility: hidden; }
+.zone:focus-visible .point.cursor { visibility: visible; }
+
+/* --- Mode sombre : réglage de l'appareil par défaut, bouton ☀️/🌙 pour choisir --- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e8edf8; --muted: #9aa6c3; --line: rgba(255, 255, 255, .10); --line-strong: rgba(255, 255, 255, .18);
+  --card: rgba(22, 26, 48, .78); --surface: rgba(22, 26, 48, .78); --surface-2: rgba(255, 255, 255, .05);
+  --edge: rgba(255, 255, 255, .08); --solid: #1b2140; --tint: rgba(255, 255, 255, .08);
+  --navy: #3b5bdb; --accent: #5ccfe6; --sel: #7c9cff; --box-line: #8b97b8; --switch-off: #3a4363;
+  --ok-ink: #6ee7a0; --part-ink: #fbbf5c; --bad-ink: #ff8a8a; --rec-ink: #93b4ff; --part-bg: rgba(245, 158, 11, .16);
+  --aurora: radial-gradient(60rem 30rem at 10% 0%, rgba(56, 40, 120, .55), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 10%, rgba(20, 90, 120, .45), transparent 60%),
+    radial-gradient(60rem 40rem at 40% 70%, rgba(90, 30, 110, .40), transparent 65%),
+    #0b0f22;
+}
+:root[data-theme="dark"] .figures img, :root[data-theme="dark"] .correction img, :root[data-theme="dark"] .option-text img { background: #ffffff; }
+.theme-toggle { width: 38px; justify-content: center; padding: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style></head><body>
+<header class="topbar"><div class="titles"><h1>CARDIO 11/25 26</h1><p class="sub"><span id="position" aria-live="polite"></span><span id="score" class="pill"></span></p></div><div class="tools" id="tools"></div></header>
+<div class="layout"><main id="annale"></main><aside id="panel" aria-label="Navigation de l'examen"></aside></div>
+<div class="scrim" aria-hidden="true"></div>
+<noscript>Active JavaScript pour répondre aux questions de cette annale.</noscript>
+<script type="application/json" id="soschimie-annale-data">{"title":"CARDIO 11/25 26","questions":[{"id":"q-1","type":"qcm","choices":["A. HTA","B. Tabac","C. Dyslipidémie","D. Diabète","E. Alcool \u003c 10 g/jour"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels sont les facteurs de risque cardiovasculaire : 4 réponses vraies","section":"SQI1","qNumber":"1","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car l'HTA est un facteur majeur. B. vrai car le tabac est athérogène. C. vrai car la dyslipidémie favorise l'athérome. D. vrai car le diabète est un facteur majeur. E. faux car une consommation faible n'est pas retenue comme facteur de risque.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-2","type":"qcm","choices":["A. Fibrillation ventriculaire","B. Rupture septale","C. Péricardite de Dressler","D. Choc cardiogénique","E. Insuffisance mitrale aiguë"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Citer les complications précoces de l’infarctus du myocarde : 4 réponses vraies","section":"SQI1","qNumber":"2","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : trouble du rythme précoce. B. vrai : complication mécanique. C. faux car le syndrome de Dressler est tardif. D. vrai : défaillance de pompe. E. vrai : rupture de pilier mitral.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-3","type":"qcm","choices":["A. Cardiopathie ischémique","B. Cardiomyopathie dilatée","C. Valvulopathie mitrale","D. HTA chronique","E. Asthme sévère"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Citer les causes d’insuffisance cardiaque gauche chronique","section":"SQI1","qNumber":"3","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : perte de myocarde. B. vrai : altération de la fonction systolique. C. vrai : surcharge du cœur gauche. D. vrai : surcharge de pression. E. faux car cause respiratoire, non cardiaque gauche.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-4","type":"qcm","choices":["A. Douleur thoracique calmée en antéflexion","B. Crépitants pulmonaires","C. Frottement péricardique","D. Sus-décalage diffus du segment ST","E. Onde Q de nécrose"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels sont les signes cliniques ou paracliniques de la péricardite aiguë ?3 propositions vraies","section":"SQI1","qNumber":"4","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : douleur typique soulagée en antéflexion. B. faux : signe d'œdème pulmonaire. C. vrai : signe pathognomonique. D. vrai : sus-décalage diffus concave. E. faux : signe de nécrose myocardique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-5","type":"qcm","choices":["A. Mesures répétées en consultation","B. Mesure ambulatoire de la pression artérielle (MAPA)","C. Automesure tensionnelle (AMT)","D. ECG 12 dérivations","E. Échocardiographie cardiaque"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels examens sont utiles au diagnostic d’hypertension artérielle essentielle ?3 réponses vraies","section":"SQI1","qNumber":"5","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : base du diagnostic. B. vrai : confirme l'HTA. C. vrai : confirme l'HTA. D. faux : bilan de retentissement, pas diagnostic. E. faux : idem.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-6","type":"qcm","choices":["A. Etat de choc","B. Syncope","C. Fièvre modérée","D. Hypotension artérielle persistante","E. Tachycardie extrême"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels sont les signes de gravité d’une embolie pulmonaire aiguë ?4 réponses vraies","section":"SQI1","qNumber":"6","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : retentissement hémodynamique. B. vrai : signe de gravité. C. faux : non spécifique. D. vrai : instabilité. E. vrai : signe de gravité.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-7","type":"qcm","choices":["A. Turgescence jugulaire","B. Œdèmes des membres inférieurs","C. Ascite","D. Hépatomégalie douloureuse","E. Orthopnée"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"QCM 7(Rang A) – Quels signes cliniques orientent vers une insuffisance cardiaque droite ?4 réponses vraies","section":"SQI1","qNumber":"7","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : stase veineuse. B. vrai : signe droit. C. vrai : signe droit. D. vrai : foie de stase. E. faux : signe d'insuffisance gauche.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-8","type":"qcm","choices":["A. ECG","B. Échocardiographie transthoracique","C. Radiographie thoracique","D. Coronarographie","E. IRM cardiaque"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels examens doivent être effectués en urgence devant une suspicion de tamponnade cardiaque ?2\nréponses vraies","section":"SQI1","qNumber":"8","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : examen urgent de première ligne. B. vrai : confirme l'épanchement et la compression. C. faux : non prioritaire. D. faux : non indiquée. E. faux : non adaptée à l'urgence.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-9","type":"qcm","choices":["A. Traitement antiagrégant plaquettaire","B. Statine à forte dose","C. Inhibiteur de l’Enzyme de Conversion","D. Bêta-bloquant","E. Vitamines antioxydantes"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quelles mesures font partie de la prévention secondaire après un SCA avec sus-décalage du segment ST\nétendu?4 réponses vraies","section":"SQI1","qNumber":"9","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : prévient la thrombose. B. vrai : baisse le LDL. C. vrai : limite le remodelage. D. vrai : réduit la mortalité post-infarctus. E. faux : sans bénéfice démontré.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-10","type":"qcm","choices":["A. Sus-décalage du ST diffus","B. Sous-décalage du PQ","C. Évolution typique en 4 phases","D. Onde Q de nécrose","E. Microvoltage"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels sont les signes ECG évocateurs de péricardite aiguë ?3 réponses vraies","section":"SQI1","qNumber":"10","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : typique. B. vrai : signe évocateur. C. vrai : évolution en 4 stades. D. faux : signe de nécrose. E. faux : évoque un épanchement abondant, non spécifique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-11","type":"qcm","choices":["A. Interrogatoire détaillé","B. Examen clinique complet","C. ECG 12 dérivations","D. Mesure de la tension artérielle couchée et debout","E. IRM cérébrale"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quelles mesures de première intention sont-elles requises devant une syncope ?4 réponses vraies","section":"SQI1","qNumber":"11","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : base du diagnostic. B. vrai : requis. C. vrai : systématique. D. vrai : recherche une hypotension orthostatique. E. faux : non indiquée en première intention.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-12","type":"qcm","choices":["A. Repos","B. Prise tensionnelle répétée","C. Ajustement du traitement oral","D. Hospitalisation systématique","E. Diminution rapide par traitement par voie IV (intra veineuse)"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quelle est la conduite devant une hypertension artérielle sévère sans retentissement aigu ?3 réponses vraies","section":"SQI1","qNumber":"12","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : première mesure. B. vrai : contrôle de la tension. C. vrai : voie orale suffisante. D. faux : non systématique. E. faux : baisse rapide inutile et risquée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-13","type":"qcm","choices":["A. Angor sévère malgré traitement médical optimal","B. Sténose coronarienne tritronculaire","C. Sténose du tronc commun gauche > 50%","D. FEVG (fraction d’éjection ventriculaire gauche)\u003c 35% avec ischémie réversible","E. Toute sténose > 50% chez patient asymptomatique"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B) – Quelle(s) est(sont) la (les) indication(s) de revascularisation coronaire chez un patient avec angor d’effort\n(syndrome coronarien chronique) :","section":"SQI1","qNumber":"13","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : échec du traitement médical. B. vrai : atteinte étendue. C. vrai : sténose du tronc commun à haut risque. D. vrai : bénéfice si ischémie réversible. E. faux : une sténose asymptomatique ne suffit pas.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-14","type":"qcm","choices":["A. ECG 12 dérivations","B. Anticoagulation adaptée au risque thromboembolique","C. Cardioversion électrique immédiate","D. Traitement ralentisseur de la conduction auriculo-ventriculaire (bêta-bloquant, vérapamil), selon la fréquence cardiaque","E. Orientation vers consultation de rythmologie"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B) – Quelle est la conduite initiale devant un flutter auriculaire bien toléré ?","section":"SQI1","qNumber":"14","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : confirme le diagnostic. B. vrai : prévient les embolies. C. faux car non urgente si bien toléré. D. vrai : contrôle de la fréquence. E. vrai : prise en charge spécialisée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-15","type":"qcm","choices":["A. Vérapamil","B. Diltiazem","C. Inhibiteur de l’Enzyme de Conversion","D. Anti-Inflammatoire Non Stéroïdiens","E. Corticothérapie à faible dose"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B) – Quels médicaments sont contre-indiqués dans l’insuffisance cardiaque à FEVG altérée ?","section":"SQI1","qNumber":"15","sourceSegmentTitle":"SQI1 – Questions 1 à 15","localization":false,"needsImage":false,"correctAnswers":[0,1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : inotrope négatif. B. vrai : inotrope négatif. C. faux : traitement de référence. D. vrai : rétention hydrosodée, aggravation. E. faux : non contre-indiquée à faible dose.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-16","type":"qcm","choices":["A. Hypertension artérielle","B. Consommation excessive d’alcool","C. Hyperthyroïdie","D. Valvulopathie mitrale","E. Asthme isolé"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B) – Quels sont les facteurs déclenchants ou favorisants de la fibrillation auriculaire ?","section":"SQI1","qNumber":"16","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car l'HTA entraîne une dilatation auriculaire. B. vrai car l'alcool est un déclencheur classique (holiday heart). C. vrai car l'hyperthyroïdie favorise la FA. D. vrai car la valvulopathie mitrale dilate l'oreillette. E. faux car l'asthme isolé n'est pas un facteur.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-17","type":"qcm","choices":["A. ECG","B. Échocardiographie cardiaque","C. IRM cardiaque","D. Coronarographie","E. Examens biologiques spécifiques"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B) – Quels examens font partie du bilan initial d’une cardiopathie dilatée ?","section":"SQI1","qNumber":"17","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car l'ECG recherche troubles du rythme et de conduction. B. vrai car l'écho est l'examen clé. C. vrai car l'IRM caractérise le myocarde. D. vrai car la coronarographie élimine une cause ischémique. E. vrai car le bilan biologique cherche l'étiologie.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-18","type":"qcm","choices":["A. Infarctus antérieur ancien","B. Cardiomyopathie dilatée","C. Valvulopathie aortique","D. Hypertension artérielle","E. Bronchite Chronique Obstructive"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B) – Quels diagnostics évoquer devant un bloc de branche gauche complet ?","section":"SQI1","qNumber":"18","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car une séquelle de nécrose peut donner un BBG. B. vrai car la dilatation atteint le système de conduction. C. vrai car la valvulopathie aortique peut l'induire. D. faux selon le corrigé. E. faux car la BPCO n'est pas une cause.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-19","type":"qcm","choices":["A. Insuffisance cardiaque aiguë","B. Abcès périvalvulaire","C. Embolie cérébrale","D. Fièvre élevée","E. Insuffisance rénale aiguë"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels sont les critères de gravité de l’endocardite infectieuse ?4 réponses vraies","section":"SQI1","qNumber":"19","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,1,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car signe de destruction valvulaire. B. vrai car complication locale grave. C. vrai car embolie systémique grave. D. faux car la fièvre n'est pas un critère de gravité. E. vrai car atteinte rénale grave.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-20","type":"qcm","choices":["A. Insuffisance cardiaque sévère liée à la valvulopathie","B. Abcès périvalvulaire","C. Endocardite fongique","D. Embolies répétées malgré antibiothérapie adaptée","E. Toute endocardite infectieuse"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B) – Quelles sont les principales indications chirurgicales de l’endocardite infectieuse ?","section":"SQI1","qNumber":"20","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car l'IC sévère impose la chirurgie. B. vrai car complication locale. C. vrai car mauvaise réponse aux antifongiques. D. vrai car échec médical. E. faux car la plupart guérissent sous antibiotiques.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-21","type":"qcm","choices":["A. Trouble du rythme ventriculaire","B. Bloc auriculo-ventriculaire complet","C. Sténose aortique serrée","D. Réaction vagale","E. Ictus mnésique"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quelles sont les causes cardiaques possibles de syncope ?4 réponses vraies","section":"SQI1","qNumber":"21","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car baisse du débit. B. vrai car bradycardie sévère. C. vrai car obstacle à l'éjection à l'effort. D. vrai selon le corrigé. E. faux car c'est un trouble de la mémoire, non une syncope.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-22","type":"qcm","choices":["A. ECG","B. Radiographie thoracique","C. Échocardiographie cardiaque","D. Coronarographie","E. IRM cérébrale"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B) – Vous suspectez un rétrécissement aortique. Quels examens peuvent être utiles ?","section":"SQI1","qNumber":"22","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car recherche hypertrophie VG. B. vrai car peut montrer calcifications ou cardiomégalie. C. vrai car examen diagnostique clé. D. faux selon le corrigé. E. faux car sans rapport.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-23","type":"qcm","choices":["A. Syncope","B. Angor d'effort","C. Dyspnée d’effort","D. OAP","E. Toux sèche isolée"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels signes cliniques orientent vers une sténose aortique serrée symptomatique ?4 réponses vraies","section":"SQI1","qNumber":"23","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai, triade classique. B. vrai. C. vrai. D. vrai, signe d'IC gauche. E. faux car non spécifique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-24","type":"qcm","choices":["A. Trinitrine","B. Bêta-bloquant","C. Spironolactone","D. Inhibiteurs de SGLT2","E. Sacubitril/valsartan (Entresto)"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels traitements médicamenteux sont indiqués dans l’insuffisance cardiaque chronique à FEVG altérée ?4\nréponses vraies","section":"SQI1","qNumber":"24","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[1,2,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux car la trinitrine est symptomatique, sans bénéfice pronostique. B. vrai, pronostique. C. vrai, antialdostérone. D. vrai. E. vrai, remplace l'IEC.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-25","type":"qcm","choices":["A. Le débit cardiaque dépend du volume télé diastolique et de la fréquence cardiaque.","B. Selon la loi de Starling, l'étirement des fibres lié à l'augmentation de la pression au moment du remplissage cardiaque (précharge) s'accompagne d'une augmentation de l'inotropie du ventricule quelque soit le degré de dilatation ventriculaire","C. La vasoconstriction en réponse à l'activation du système sympathique est délétère pour la fonction cardiaque","D. La rétention hydrosodée liée à la baisse de la perfusion rénale et à la diminution de l'excrétion sodée contribue à augmenter la précharge","E. En cas de bloc de branche gauche, l’asynchronisme cardiaque peut aggraver une insuffisance cardiaque"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B). Dans l’insuffisance cardiaque, laquelle ou lesquelles de ces propositions est/sont correcte (s) :","section":"SQI1","qNumber":"25","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,2,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car DC = VES (lié au VTD) × FC. B. faux car Starling a une limite en cas de dilatation excessive. C. vrai car augmente la postcharge. D. vrai car augmente le volume circulant. E. vrai car l'asynchronisme réduit l'efficacité.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-26","type":"qcm","choices":["A. Elle est indiquée quelle que soit la valeur du CHADSVASc dans le rétrécissement mitral serré","B. L’aspirine est indiquée en cas de CHADSVASc égal à 0","C. Les nouveaux anticoagulants oraux sont indiqués dans la FA quelle que soit la cardiopathie sous-jacente à condition que le score CHADSVASc soit supérieur ou égal à 2","D. Un ATCD d’AVC ischémique est une indication d’anticoagulation s’il est secondaire à de la FA","E. Un score HAS BLED supérieur à 3 est une contre-indication formelle à la poursuite d’une anticoagulation"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(rang A). Concernant l’anticoagulation dans la fibrillation atriale (FA) , citer les réponses vraies 2 réponses vraies","section":"SQI1","qNumber":"26","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[0,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai car FA valvulaire : AVK systématique. B. faux car aucun traitement à 0. C. faux car AOD contre-indiqués dans RM serré ou prothèse mécanique. D. vrai. E. faux car HAS-BLED pousse à corriger les risques, pas à contre-indiquer.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-27","type":"qcm","choices":["A. repos au lit strict","B. fibrinolytiques","C. anticoagulants","D. bas de contention"," E. anti-inflammatoires non stéroïdiens"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(rang A): le traitement de la phlébite des membres inférieurs est : citer les réponses vraies2 réponses vraies","section":"SQI1","qNumber":"27","sourceSegmentTitle":"SQI1 – Questions 16 à 29","localization":false,"needsImage":false,"correctAnswers":[3,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux car le lever précoce avec contention est recommandé. Les autres items ne figurent pas dans le document fourni.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-28","type":"qcm","choices":["A. Le score PESI simplifié permet de prédire le risque de mortalité à J30","B. L'élévation de la troponine n'est pas un facteur de mauvais pronostic","C. Un bilan de thrombophilie est recommandé en cas de 1er épisode de MTEV (maladie veineuse thrombo-embolique) proximale avant 60 ans, sans facteur déclenchant identifié","D. Un bilan de thrombophilie est recommandé en cas de 1er de MTEV (maladie veineuse thrombo-embolique)proximale provoquée avant 50 ans","E. Les anticoagulants directs ne sont pas recommandés en première intention en cas d'embolie pulmonaire non grave"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"Question annulée\n(Rang A). En cas d'embolie pulmonaire, citer les réponses vraies2 réponses vraies","section":"SQI1","qNumber":"28","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : le PESI simplifié estime la mortalité à J30. B. faux : la troponine élevée est un facteur de mauvais pronostic. C. faux : jugé faux dans le corrigé. D. vrai : valide selon le corrigé. E. faux : les anticoagulants oraux directs sont recommandés en première intention. La question est signalée annulée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-29","type":"qcm","choices":["A. Activité rénine plasmatique effondrée","B. Palpation d’un gros rein","C. Hypokaliémie","D. HTA résistante","E. Natriurèse élevée"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang B). Chez un patient hypertendu, quels signes font suspecter une sténose de l’artère rénale?","section":"SQI1","qNumber":"29","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : la rénine est élevée. B. faux : gros rein évoque une polykystose. C. vrai : l'hyperaldostéronisme secondaire entraîne une hypokaliémie. D. vrai : HTA résistante évocatrice. E. faux : la natriurèse est basse.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-30","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Devant des palpitations chez un jeune de 25 ans","prompt":"Quel examen paraclinique est prioritaire en urgence ?","section":"KFP1","qNumber":"1","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"ECG (électrocardiogramme)","explanation":"L'ECG est l'examen de première intention devant des palpitations, il identifie le rythme.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-31","type":"qcm","choices":["A. Tachycardie ventriculaire","B. Fibrillation auriculaire","C. Bloc auriculo-ventriculaire du 3° degré","D. Tachycardie jonctionnelle","E. Tachycardie atrial","F. Extrasystoles auriculaires","G. Extrasystoles ventriculaires"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"Quels diagnostics évoquer devant une tachycardie régulière à QRS fins à 180/min ? 2 réponses attendues","section":"KFP1","qNumber":"2","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : TV à QRS larges. B. faux : irrégulière. C. faux : rythme lent. D. vrai : régulière à QRS fins. E. vrai : idem. F. faux : extrasystoles isolées, pas de tachycardie soutenue. G. faux : QRS larges et isolées.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-32","type":"qcm","choices":["A. Il s’agit d’une tachycardie ventriculaire","B. Présence d’un état de choc","C. Présence d’un OAP grave","D. Syncopes récidivantes","E. Sueurs profuses","F. Anxiété","G. Le patient est déjà traité par anticoagulant"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"Quels sont les critères de gravité imposant une cardioversion électrique immédiate pour cette tachycardie à 180/min?","section":"KFP1","qNumber":"3","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : le type de tachycardie seul n'impose pas la cardioversion. B. vrai : mauvaise tolérance hémodynamique. C. vrai : insuffisance cardiaque aiguë grave. D. vrai : signe de gravité. E. faux : non spécifique. F. faux : non spécifique. G. faux : pas un critère de gravité.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-33","type":"qcm","choices":["A. œdème aigu pulmonaire cardiogénique","B. Exacerbation de BPCO","C. Pneumothorax bilatéral","D. Embolie pulmonaire massive","E. Tamponnade péricardique"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous êtes de garde aux urgences et recevez une femme de 72 ans adressée par son médecin traitant pour dyspnée","prompt":"QRU (Rang A) – Devant une dyspnée aiguë avec crépitants bilatéraux, quel diagnostic est le plus probable ?","section":"mDP1","qNumber":"1","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : crépitants bilatéraux évoquent l'OAP. B. faux : sibilants. C. faux : abolition du murmure. D. faux : auscultation souvent normale. E. faux : signes droits.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-34","type":"qcm","choices":["A. Orthopnée","B. Crépitants aux bases","C. Turgescence jugulaire","D. Reflux hépato-jugulaire","E. Dyspnée d’effort"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels éléments cliniques suggèrent une insuffisance cardiaque gauche? 3 réponses vraies","section":"mDP1","qNumber":"2","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,1,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : congestion pulmonaire. B. vrai : œdème pulmonaire. C. faux : signe droit. D. faux : signe droit. E. vrai : signe fonctionnel gauche.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-35","type":"qcm","choices":["A. ECG","B. Ionogramme sanguin, créatinémie","C. BNP ou NT-proBNP","D. Scanner thoracique","E. Echocardiographie"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Vous suspectez une insuffisance cardiaque. Quels examens complémentaires sont indiqués ? 4 réponses\nvraies","section":"mDP1","qNumber":"3","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,1,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : bilan de base. B. vrai : fonction rénale et ionogramme. C. vrai : peptides natriurétiques. D. faux : non systématique. E. vrai : confirme et évalue la FEVG.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-36","type":"qcm","choices":["A. Oxygénothérapie","B. Diurétiques de l’anse IV","C. Trinitrine par voie IV si la TAs est >100mmHg","D. Inhibiteur de l’enzyme de conversion per os immédiat","E. Ventilation non invasive"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Le diagnostic est un OAP (œdème aigu pulmonaire cardiogénique).Quels traitements initiaux proposez-\nvous ? 4 réponses vraies","section":"mDP1","qNumber":"4","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,1,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : corrige l'hypoxémie. B. vrai : diurétique IV. C. vrai : vasodilatateur si PAS >100. D. faux : pas en urgence initiale. E. vrai : VNI utile.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-37","type":"qcm","choices":["A. Syndrome coronarien aigu","B. Dissection aortique","C. Péricardite aiguë","D. reflux gastro-oesophagien","E. Pneumothorax spontané"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez un homme de 58 ans pour une douleur thoracique constrictive qui évolue depuis 30 minutes. Il sent une\nforte odeur de tabac.","prompt":"Devant une douleur medio-thoracique brutale constrictive, quels diagnostics évoquez-vous en priorité? Rang A: 3\nréponses vraies","section":"mDP2","qNumber":"1","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : douleur constrictive. B. vrai : urgence vitale à évoquer. C. vrai : valide selon le corrigé. D. faux : non prioritaire. E. faux : non prioritaire.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-38","type":"qcm","choices":["A. ECG 12 dérivations","B. Dosage de la Troponine ultrasensible (en l'absence de sus-décalage du ST)","C. Radiographie thoracique","D. Angioscanner pulmonaire","E. Coronarographie immédiate"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Vous suspectez une origine cardiaque chez ce patient qui a de nombreux facteurs de risque (tabagisme actif,\nobésité, hypertension artérielle, diabète). Quels examens sont prioritaires en urgence ? 2 réponses vraies","section":"mDP2","qNumber":"2","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,1],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : examen prioritaire. B. vrai : en l'absence de sus-décalage. C. faux : non prioritaire. D. faux : non indiqué. E. faux : pas sans sus-décalage.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-39","type":"qcm","choices":["A. Sus-décalage persistant du ST ≥ 1 mm","B. Onde Q de nécrose","C. Sous-décalage du ST diffus","D. Inversion symétrique des ondes T","E. Tachycardie sinusale isolée"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Quels signes ECG orienteraient vers un STEMI (SCA ST+)? 2 réponses vraies","section":"mDP2","qNumber":"3","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,1],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : critère du STEMI. B. vrai : nécrose. C. faux : SCA sans sus-décalage. D. faux : ST-. E. faux : non spécifique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-40","type":"qcm","choices":["A. le diagnostic est un SCA ST négatif","B. on peut conclure à un infarctus du myocarde","C. le territoire concerné est latéral","D. le territoire concerné est inférieur","E. l’ECG peut servir à détecter des complications"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – L’ECG retrouve une inversion des ondes T en D2-D3-AVf, la troponine est à 70ng/L, recontrôlée à 90ng/L\nà la deuxième heure. Citer les réponses vraies. 4 réponses vraies","section":"mDP2","qNumber":"4","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : pas de sus-décalage. B. vrai : cinétique de troponine. C. faux : D2-D3-aVF = inférieur. D. vrai : territoire inférieur. E. vrai : troubles du rythme et de conduction.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-41","type":"qcm","choices":["A. Il faut remesurer la Troponine pour rechercher des complications","B. Le patient doit être hospitalisé en USIC","C. Un traitement par 2 anti-agrégants plaquettaires doit être introduit","D. Un traitement anticoagulant doit être introduit","E. Il faut surveiller le rythme cardiaque (monitoring cardiaque)"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Le diagnostic final était un SCA ST négatif (NSTEMI). Citer les réponses vraies concernant sa prise en\ncharge. 3 réponses vraies","section":"mDP2","qNumber":"5","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux selon le corrigé. B. vrai : surveillance en USIC. C. faux selon le corrigé. D. vrai : anticoagulation. E. vrai : monitoring du rythme.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-42","type":"qcm","choices":["A. La douleur persiste","B. Il apparait un sous-décalage du segment ST","C. Le patient présente un bloc auriculo-ventriculaire du 1er degré","D. Le patient présente des accès de tachycardie ventriculaire soutenus","E. Le patient a un rendez-vous important demain"],"figures":[],"choiceFigures":[],"correctionFigures":[],"prompt":"(Rang A) – Vous avez prévu la réalisation d’une coronarographie dans les 24 heures. Quels nouveau) éléments\npourraitent vous décider à réaliser la coronarographie immédiatement ? 3 réponses vraies","section":"mDP2","qNumber":"6","sourceSegmentTitle":"KFP1, mDP1 et mDP2","localization":false,"needsImage":false,"correctAnswers":[0,1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : ischémie réfractaire. B. vrai : instabilité électrique. C. faux : BAV1 bénin. D. vrai : arythmie ventriculaire menaçante. E. faux : non médical.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true}]}</script>
+<script type="module">/**
+ * @param {readonly {section?: string, sourceSegmentTitle?: string, sourceTitle?: string, qNumber?: string}[]} questions
+ * @param {number} index
+ * @param {Record<number, number>} attempts
+ * @param {number|null} [justAnswered]
+ * @returns {number|undefined}
+ */
+export function unansweredDPPrerequisite(questions, index, attempts, justAnswered = null) {
+  const dossier = (question) => (question.section?.trim() ||
+    question.sourceSegmentTitle?.trim().replace(/\s+\(\d+\/\d+\)$/, "") || "")
+    .replace(/^[eé]l[eé]ment\s+d['’][eé]preuve\s*:\s*/i, "").toLowerCase().replace(/\s+/g, " ");
+  const current = questions[index];
+  if (!current) return undefined;
+  const group = dossier(current);
+  if (!/^(?:m?dp(?=\s*\d|\b)|dossier\s+(?:progressif|patient)\b)/i.test(group)) return undefined;
+  let prerequisite;
+  for (let previous = index - 1; previous >= 0; previous--) {
+    const question = questions[previous];
+    if (question.sourceTitle !== current.sourceTitle || dossier(question) !== group ||
+      /^(?:q\.?\s*)?1$/i.test(String(questions[previous + 1].qNumber ?? "").trim())) break;
+    if (previous !== justAnswered && !(attempts[previous] > 0)) prerequisite = previous;
+  }
+  return prerequisite;
+}
+
+/**
+ * Note d'une QROC. La réponse attendue liste les réponses valides du corrigé
+ * séparées par « / » ; celles qui ne valent qu'une partie des points suivent
+ * entre parenthèses : « a / b (accepté pour une partie des points : c / d) ».
+ * Une réponse vaut 1 si elle est l'une des réponses valides, 0,5 si elle est
+ * l'une des réponses partielles, 0 sinon — sans tenir compte des majuscules,
+ * des accents, des espaces ni de la ponctuation finale.
+ * @param {string | undefined} expectedText
+ * @param {string} actualText
+ * @returns {number}
+ */
+export function scoreQroc(expectedText, actualText) {
+  const normalize = (text) => String(text ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[’`]/g, "'").replace(/\s+/g, " ").trim().replace(/[\s.;:,!?]+$/, "");
+  const actual = normalize(actualText);
+  const expected = String(expectedText ?? "").trim();
+  if (!actual || !expected) return 0;
+  const split = (text) => text.split(" / ").map(normalize).filter(Boolean);
+  const partial = expected.match(/\s*\(accepté pour une partie des points\s*:\s*(.*)\)\s*$/i);
+  const main = partial ? expected.slice(0, partial.index) : expected;
+  const full = split(main);
+  // Ancien format en un bloc : « Réponse (précision) » accepte aussi « Réponse ».
+  for (const answer of [...full]) {
+    const sansPrecision = answer.replace(/\s*\([^)]*\)\s*$/, "");
+    if (sansPrecision && sansPrecision !== answer) full.push(sansPrecision);
+  }
+  if (full.includes(actual) || normalize(expected) === actual) return 1;
+  if (partial && split(partial[1]).includes(actual)) return 0.5;
+  // Petites fautes de frappe ou d'orthographe tolérées (voir `presqueEgal`).
+  if (full.some((answer) => presqueEgal(answer, actual))) return 1;
+  if (partial && split(partial[1]).some((answer) => presqueEgal(answer, actual))) return 0.5;
+  return 0;
+}
+
+/**
+ * Une réponse « presque » égale : même texte au pluriel près (« vaccinations »
+ * pour « vaccination ») et à UNE faute près — deux à partir de 14 lettres. Les
+ * réponses courtes (moins de 5 lettres) et celles qui contiennent un nombre
+ * restent exigées à l'identique : « 33 » n'est pas « 3 », « VHB » n'est pas
+ * « VIH ». Volontairement serré : « hyperkaliémie » ne passe pas pour
+ * « hypokaliémie » (deux fautes sur douze lettres).
+ * @param {string} expected déjà normalisé
+ * @param {string} actual déjà normalisé
+ */
+function presqueEgal(expected, actual) {
+  if (expected.length < 5 || /\d/.test(expected) || /\d/.test(actual)) return false;
+  const singulier = (text) => text.split(" ").map((word) => word.length > 3 ? word.replace(/[sx]$/, "") : word).join(" ");
+  const a = singulier(expected);
+  const b = singulier(actual);
+  if (a === b) return true;
+  const tolerance = a.length >= 14 ? 2 : 1;
+  if (Math.abs(a.length - b.length) > tolerance) return false;
+  // Distance d'édition (Levenshtein), arrêtée dès qu'elle dépasse la tolérance.
+  let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i += 1) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      row[j] = Math.min(previous[j] + 1, row[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      best = Math.min(best, row[j]);
+    }
+    if (best > tolerance) return false;
+    previous = row;
+  }
+  return previous[b.length] <= tolerance;
+}
+
+/**
+ * @param {{choices: readonly string[], singleAnswer?: boolean, indispensables?: number[], inacceptables?: number[]}} q
+ * @param {number[]} expected
+ * @param {number[]} actual
+ */
+export function scoreQcm(q, expected, actual) {
+  if (q.singleAnswer) {
+    if (expected.length === 0) return Number(actual.length === 0);
+    return Number(actual.length === 1 && expected.includes(actual[0]));
+  }
+  const indispensables = q.indispensables || [];
+  const inacceptables = q.inacceptables || [];
+  const hasMissedIndispensable = indispensables.some((req) => !actual.includes(req));
+  const hasSelectedInacceptable = inacceptables.some((inacc) => actual.includes(inacc));
+  if (hasMissedIndispensable || hasSelectedInacceptable) return 0;
+  const isKFP = q.choices.length > 5;
+  if (isKFP) {
+    // Règle KFP : proportionnel x/n
+    const n = expected.length;
+    if (n === 0) return actual.length === 0 ? 1 : 0;
+    const correctChecked = actual.filter((a) => expected.includes(a)).length;
+    const incorrectChecked = actual.filter((a) => !expected.includes(a)).length;
+    // On calcule (bonnes - mauvaises) / attendues pour éviter qu'un étudiant coche toutes les cases
+    const s = (correctChecked - incorrectChecked) / n;
+    return Math.max(0, Number(s.toFixed(2)));
+  }
+  // Règle DP classique (QRM à 5 choix max)
+  let incoherences = 0;
+  for (const ans of actual) if (!expected.includes(ans)) incoherences++;
+  for (const ans of expected) if (!actual.includes(ans)) incoherences++;
+  if (incoherences === 0) return 1;
+  if (incoherences === 1) return 0.5;
+  if (incoherences === 2) return 0.2;
+  return 0;
+}
+
+// Ce fichier est inséré après quizRules.js dans le document autonome.
+// Lecteur autonome d'une annale exportée : même disposition que le lecteur du
+// site — barre du haut et panneau de navigation qui restent à l'écran pendant
+// qu'on descend dans les questions.
+/* global unansweredDPPrerequisite, scoreQcm, scoreQroc */
+const { questions } = JSON.parse(document.getElementById("soschimie-annale-data").textContent);
+const main = document.getElementById("annale");
+const panel = document.getElementById("panel");
+const tools = document.getElementById("tools");
+const position = document.getElementById("position");
+const scoreBadge = document.getElementById("score");
+let attempts = {};
+let drafts = [];
+let scores = [];
+let flagged = {};
+// Vue d'ensemble : l'élève lève le verrou des dossiers progressifs pour tout parcourir.
+let overview = false;
+const hasDossier = questions.some((_, index) => unansweredDPPrerequisite(questions, index, {}) !== undefined);
+const fermee = (index) => !overview && unansweredDPPrerequisite(questions, index, attempts) !== undefined;
+// « Une à la fois » ou « Toutes » sur une page, comme dans le lecteur du site.
+let viewMode = "one";
+let current = 0;
+let finished = false;
+// Panneau : ouvert à côté sur grand écran, tiroir sur téléphone.
+const wide = window.matchMedia("(min-width: 1024px)");
+let panelOpen = wide.matches;
+// Chronomètre de séance : le temps qui coule, sans limite, avec pause.
+const stopwatch = { accumMs: 0, since: Date.now() };
+const stopwatchMs = () => stopwatch.accumMs + (stopwatch.since === null ? 0 : Date.now() - stopwatch.since);
+const gradedTotal = questions.filter((question) => question.countsForScore).length;
+
+function element(tag, content, className) {
+  const node = document.createElement(tag);
+  if (content) node.textContent = content;
+  if (className) node.className = className;
+  return node;
+}
+
+function button(label, action, className) {
+  const control = element("button", label, className);
+  control.type = "button";
+  control.addEventListener("click", action);
+  return control;
+}
+
+// Icônes au trait (mêmes formes que celles du site), dessinées en SVG inline.
+const ICONS = {
+  lock: "M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5z",
+  unlock: "M7 11V7a5 5 0 0 1 9.9-1M5 11h14v10H5z",
+  flag: "M4 22V4M4 4h13l-2 4 2 4H4",
+  pause: "M8 5v14M16 5v14",
+  play: "M7 4l13 8-13 8z",
+  grid: "M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z",
+  pin: "M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+  close: "M6 6l12 12M18 6L6 18",
+  chevron: "M9 6l6 6-6 6",
+  back: "M15 6l-6 6 6 6",
+  one: "M4 6h4M4 12h4M4 18h4M11 6h9M11 12h9M11 18h9",
+  all: "M4 5h16v6H4zM4 13h16v6H4z",
+};
+function icon(name, className) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("class", "icon" + (className ? " " + className : ""));
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", ICONS[name]);
+  svg.append(path);
+  return svg;
+}
+
+function appendImage(container, src, alt) {
+  if (!src) return;
+  const image = element("img");
+  image.src = src;
+  image.alt = alt;
+  container.append(image);
+  return image;
+}
+
+function formatStopwatch(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const mmss = String(Math.floor((total % 3600) / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
+  return h > 0 ? h + ":" + mmss : mmss;
+}
+
+const numero = (index) => questions[index].qNumber || index + 1;
+const answeredCount = () => Object.keys(attempts).length;
+const pointsTotal = () => scores.filter((score) => typeof score === "number").reduce((total, score) => total + score, 0);
+const pendingOthers = () => questions.filter((_, i) => i !== current && !attempts[i] && !fermee(i)).length;
+
+// ---------------------------------------------------------------------------
+// Barre du haut
+// ---------------------------------------------------------------------------
+
+const clock = button("", () => {
+  if (stopwatch.since === null) stopwatch.since = Date.now();
+  else { stopwatch.accumMs = stopwatchMs(); stopwatch.since = null; }
+  renderClock();
+}, "chip clock");
+const navToggle = button("", () => { panelOpen = !panelOpen; renderPanelVisibility(); }, "chip nav-toggle");
+navToggle.setAttribute("aria-controls", "panel");
+
+// Mode clair / sombre : le réglage de l'appareil la première fois, puis le
+// choix de l'élève, mémorisé dans ce navigateur (sans jamais bloquer si le
+// stockage est indisponible, par exemple un fichier ouvert en navigation privée).
+const THEME_KEY = "soschimie-annale-theme";
+let theme = (() => {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "dark" || saved === "light") return saved;
+  } catch { /* stockage indisponible */ }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+})();
+const themeToggle = button("", () => {
+  theme = theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* stockage indisponible */ }
+  renderTheme();
+}, "chip theme-toggle");
+function renderTheme() {
+  document.documentElement.dataset.theme = theme;
+  themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+  themeToggle.title = theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre";
+  themeToggle.setAttribute("aria-label", themeToggle.title);
+}
+renderTheme();
+tools.append(themeToggle, clock, navToggle);
+
+function renderClock() {
+  const paused = stopwatch.since === null;
+  clock.replaceChildren(icon(paused ? "play" : "pause"), element("span", formatStopwatch(stopwatchMs())));
+  clock.setAttribute("aria-pressed", String(paused));
+  clock.title = paused ? "Reprendre le chronomètre" : "Mettre le chronomètre en pause";
+  clock.setAttribute("aria-label", "Chronomètre " + formatStopwatch(stopwatchMs()) + (paused ? " en pause — reprendre" : " — mettre en pause"));
+}
+
+function renderTopbar() {
+  position.textContent = finished ? "Annale terminée" : "Question " + (current + 1) + " / " + questions.length;
+  scoreBadge.textContent = pointsTotal().toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " / " + gradedTotal + " pt";
+  navToggle.replaceChildren(icon("grid"), element("span", "Navigation", "label"),
+    element("span", answeredCount() + "/" + questions.length, "count"));
+  navToggle.setAttribute("aria-expanded", String(panelOpen));
+  navToggle.setAttribute("aria-label", "Navigation");
+}
+
+function renderPanelVisibility() {
+  document.body.classList.toggle("panel-open", panelOpen);
+  navToggle.setAttribute("aria-expanded", String(panelOpen));
+}
+wide.addEventListener("change", () => { panelOpen = wide.matches; renderPanelVisibility(); });
+document.querySelector(".scrim")?.addEventListener("click", () => { panelOpen = false; renderPanelVisibility(); });
+
+// ---------------------------------------------------------------------------
+// Panneau de navigation
+// ---------------------------------------------------------------------------
+
+function tone(index) {
+  if (!attempts[index]) return (drafts[index]?.selected?.length || drafts[index]?.text?.trim()) ? "draft" : "unseen";
+  const score = scores[index];
+  if (score === null || score === undefined) return "recorded";
+  return score >= 1 ? "correct" : score > 0 ? "partial" : "wrong";
+}
+
+function renderPanel() {
+  panel.replaceChildren();
+  const head = element("div", "", "panel-head");
+  const titles = element("div");
+  const flaggedCount = Object.values(flagged).filter(Boolean).length;
+  titles.append(element("h2", "Navigation"), element("p",
+    answeredCount() + " validée" + (answeredCount() >= 2 ? "s" : "") + " · " + flaggedCount + " marquée" + (flaggedCount >= 2 ? "s" : ""), "muted small"));
+  const close = button("", () => { panelOpen = false; renderPanelVisibility(); }, "icon-button");
+  close.append(icon("close"));
+  close.setAttribute("aria-label", "Masquer la navigation");
+  head.append(titles, close);
+  panel.append(head);
+
+  const bar = element("div", "", "progress");
+  const fill = element("div");
+  fill.style.width = Math.round((answeredCount() / Math.max(questions.length, 1)) * 100) + "%";
+  bar.append(fill);
+  panel.append(bar);
+
+  const scroller = element("div", "", "tiles-scroll");
+  let group = null;
+  let groupLabel;
+  questions.forEach((question, index) => {
+    const label = question.section || "";
+    if (!group || label !== groupLabel) {
+      groupLabel = label;
+      const block = element("div", "", "group");
+      if (label) block.append(element("div", label, "group-label"));
+      group = element("div", "", "tiles");
+      block.append(group);
+      scroller.append(block);
+    }
+    const locked = fermee(index);
+    const tile = button(String(numero(index)), () => { showQuestion(index); if (!wide.matches) { panelOpen = false; renderPanelVisibility(); } }, "tile " + tone(index));
+    tile.disabled = locked;
+    if (index === current && !finished) tile.setAttribute("aria-current", "true");
+    if (locked) tile.append(icon("lock", "tile-lock"));
+    if (flagged[index]) tile.append(element("span", "", "tile-flag"));
+    tile.title = locked ? "Valide les questions précédentes de ce dossier" : "Question " + numero(index);
+    tile.setAttribute("aria-label", [question.section, "Question " + numero(index)].filter(Boolean).join(" · ")
+      + (locked ? " — verrouillée" : attempts[index] ? " — validée" : " — sans réponse") + (flagged[index] ? ", marquée" : ""));
+    group.append(tile);
+  });
+  panel.append(scroller);
+
+  const legend = element("div", "", "legend");
+  [["correct", "juste"], ["partial", "partielle"], ["wrong", "à revoir"], ["recorded", "enregistrée"], ["flagged", "marquée"]]
+    .forEach(([kind, text]) => {
+      const item = element("span");
+      item.append(element("i", "", "dot " + kind), document.createTextNode(text));
+      legend.append(item);
+    });
+  panel.append(legend);
+
+  const segment = element("div", "", "segment");
+  segment.setAttribute("role", "group");
+  segment.setAttribute("aria-label", "Affichage des questions");
+  [["one", "Une à la fois"], ["all", "Toutes"]].forEach(([mode, text]) => {
+    const control = button("", () => { viewMode = mode; showQuestion(current); }, viewMode === mode ? "active" : "");
+    control.append(icon(mode), element("span", text));
+    control.setAttribute("aria-pressed", String(viewMode === mode));
+    segment.append(control);
+  });
+  panel.append(segment);
+
+  if (hasDossier) {
+    const sw = button("", () => {
+      overview = !overview;
+      if (!fermee(current)) showQuestion(current);
+      else showQuestion(questions.findLastIndex((_, i) => i <= current && !fermee(i)));
+    }, "row switch-row");
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", String(overview));
+    sw.title = "Voir toutes les questions des dossiers, même celles qui ne sont pas encore débloquées";
+    const text = element("span", "", "row-text");
+    text.append(icon(overview ? "unlock" : "lock"), element("span", "Vue d'ensemble des dossiers"));
+    sw.append(text, element("span", "", "switch" + (overview ? " on" : "")));
+    panel.append(sw);
+  }
+
+  const others = pendingOthers();
+  if (others > 0) {
+    const pending = button("", () => {
+      const next = questions.findIndex((_, i) => i > current && !attempts[i] && !fermee(i));
+      showQuestion(next !== -1 ? next : questions.findIndex((_, i) => !attempts[i] && !fermee(i)));
+    }, "row");
+    pending.append(element("span", others + " question" + (others >= 2 ? "s" : "") + " laissée" + (others >= 2 ? "s" : "") + " de côté", "row-text"), icon("chevron"));
+    panel.append(pending);
+  }
+
+  const done = answeredCount() === questions.length;
+  const finish = button("Terminer", showResult, "finish" + (done ? " ready" : ""));
+  finish.disabled = !done;
+  finish.title = done ? "Voir mon score" : "Réponds à toutes les questions pour terminer";
+  panel.append(finish);
+}
+
+// ---------------------------------------------------------------------------
+// Question
+// ---------------------------------------------------------------------------
+
+function renderLocalization(question, draft, form, locked, update) {
+  const src = question.figures.find((figure) => !figure.placement)?.inlineUrl || question.imageUrl;
+  if (!src) {
+    form.append(element("p", question.correctionFigures.length
+      ? "Le visuel annoté est disponible dans le corrigé."
+      : "Le visuel de localisation est indisponible.", "muted"));
+    return false;
+  }
+  const frame = element("div", "", "localisation");
+  const target = element(locked ? "div" : "button", "", "zone");
+  if (!locked) {
+    target.type = "button";
+    target.setAttribute("aria-label", "Placer un point sur l’image");
+    form.append(element("p", "Clique sur l’image pour placer un point. Au clavier, utilise les flèches puis Entrée.", "muted small"));
+  }
+  appendImage(target, src, "Image de localisation");
+  frame.append(target);
+  form.append(frame);
+  const cursor = { x: 0.5, y: 0.5 };
+  const draw = () => {
+    target.querySelectorAll(".point").forEach((point) => point.remove());
+    const add = ({x, y}, label, extra) => {
+      const point = element("span", label, "point" + (extra ? " cursor" : ""));
+      point.style.left = x * 100 + "%";
+      point.style.top = y * 100 + "%";
+      point.setAttribute("aria-hidden", "true");
+      target.append(point);
+    };
+    draft.points.forEach((point, index) => add(point, String(index + 1), false));
+    if (!locked) add(cursor, "+", true);
+  };
+  if (!locked) {
+    target.addEventListener("keydown", (event) => {
+      const movement = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+      if (!movement) return;
+      event.preventDefault();
+      cursor.x = Math.max(0, Math.min(1, cursor.x + movement[0] * 0.04));
+      cursor.y = Math.max(0, Math.min(1, cursor.y + movement[1] * 0.04));
+      draw();
+    });
+    target.addEventListener("click", (event) => {
+      const bounds = target.getBoundingClientRect();
+      const point = event.detail === 0 ? { ...cursor }
+        : { x: (event.clientX - bounds.left) / bounds.width, y: (event.clientY - bounds.top) / bounds.height };
+      draft.points.push(point);
+      draw();
+      update();
+    });
+    form.append(button("Retirer le dernier point", () => { draft.points.pop(); draw(); update(); }, "link"));
+  }
+  draw();
+  return true;
+}
+
+function lockedCard(index) {
+  const question = questions[index];
+  const card = element("article", "", "card locked");
+  card.id = "question-" + index;
+  const badge = element("span", "", "lock-badge");
+  badge.append(icon("lock"));
+  const text = element("div");
+  text.append(element("strong", "Question " + numero(index) + (question.section ? " · " + question.section : "")),
+    element("p", "Se débloque quand tu auras validé la question précédente du dossier.", "muted small"));
+  card.append(badge, text);
+  return card;
+}
+
+function buildCard(index, solo) {
+  const question = questions[index];
+  const draft = drafts[index] ??= { selected: [], text: "", points: [] };
+  const locked = Boolean(attempts[index]);
+  const normalized = question.normalises ?? [];
+  const graded = (indices = []) => indices.filter((value) => !normalized.includes(value));
+  const expected = graded(question.correctAnswers);
+  const isQroc = question.type === "qroc" && !question.localization;
+  const fullyNormalized = question.fullyNormalized;
+  const card = element("article", "", "card");
+  card.id = "question-" + index;
+  if (!solo && index === current) card.classList.add("current");
+
+  const top = element("div", "", "card-top");
+  const pill = element("span", "", "section-pill");
+  pill.append(icon("pin"), element("span", question.section || question.sourceTitle || "Question"));
+  const flag = button("", () => { flagged[index] = !flagged[index]; flag.classList.toggle("on", flagged[index]); flag.setAttribute("aria-pressed", String(flagged[index])); renderPanel(); }, "icon-button flag" + (flagged[index] ? " on" : ""));
+  flag.append(icon("flag"));
+  flag.setAttribute("aria-pressed", String(Boolean(flagged[index])));
+  flag.setAttribute("aria-label", "Marquer la question " + numero(index));
+  flag.title = "Marquer pour y revenir";
+  top.append(pill, flag);
+  card.append(top);
+
+  if (question.context) card.append(element("p", question.context, "context"));
+  question.figures.filter((figure) => figure.placement === "context")
+    .forEach((figure) => appendImage(card, figure.inlineUrl, "Image du dossier"));
+  const heading = element("h2", "", "prompt");
+  heading.tabIndex = -1;
+  heading.append(element("span", "Q." + numero(index), "qnum"), document.createTextNode(" " + question.prompt));
+  card.append(heading);
+  const state = element("p", "", "state " + (locked ? "done" : "todo"));
+  state.append(element("i"), document.createTextNode(locked ? "Validée" : "Sans réponse"));
+  card.append(state);
+  if (!question.localization) {
+    const figures = question.figures.filter((figure) => !figure.placement);
+    const holder = element("div", "", "figures");
+    figures.forEach((figure, i) => appendImage(holder, figure.inlineUrl, "Schéma " + (i + 1)));
+    if (!figures.length) appendImage(holder, question.imageUrl, "Schéma de la question");
+    if (holder.childElementCount) card.append(holder);
+  }
+
+  const form = element("form");
+  const submit = element("button", question.localization ? "Voir le corrigé" : "Valider", "submit");
+  submit.type = "submit";
+  let hasLocalizationImage = false;
+  const update = () => {
+    submit.disabled = question.localization ? hasLocalizationImage && draft.points.length === 0
+      : isQroc ? !draft.text.trim() : !fullyNormalized && draft.selected.length === 0;
+  };
+  if (question.localization) {
+    hasLocalizationImage = renderLocalization(question, draft, form, locked, update);
+  } else if (isQroc) {
+    const label = element("label", "", "free-answer");
+    label.append(element("span", "Ta réponse", "muted small"));
+    const input = element("input");
+    input.type = "text";
+    input.value = draft.text;
+    input.readOnly = locked;
+    if (locked) input.classList.add(tone(index));
+    input.placeholder = "Écris ta réponse";
+    input.addEventListener("input", () => { draft.text = input.value; update(); });
+    label.append(input);
+    form.append(label);
+  } else {
+    const choices = element("fieldset", "", "options");
+    choices.append(element("legend", question.singleAnswer ? "Une seule réponse" : "Une ou plusieurs réponses", "sr-only"));
+    const addChoice = (text, value, figure) => {
+      const status = locked && (normalized.includes(value) ? "neutralisée"
+        : (value === -1 ? expected.length === 0 : expected.includes(value)) ? "attendue"
+        : draft.selected.includes(value) ? "non attendue" : "");
+      const option = element("label", "", "option");
+      if (status) option.dataset.status = status;
+      const match = /^\s*([A-Z])[.)]\s+/.exec(text);
+      option.append(element("span", value === -1 ? "∅" : match ? match[1] : String.fromCharCode(65 + value), "letter"));
+      const input = element("input");
+      input.type = question.singleAnswer ? "radio" : "checkbox";
+      input.name = "response-" + index;
+      input.checked = draft.selected.includes(value);
+      input.disabled = locked;
+      input.value = String(value);
+      const box = element("span", "", "box" + (question.singleAnswer ? " round" : ""));
+      const labelText = element("span", match ? text.slice(match[0].length) : text, "option-text");
+      if (figure) appendImage(labelText, figure.inlineUrl, "Schéma de la proposition " + (value + 1));
+      if (status) labelText.append(element("small", status === "attendue" ? "✓ attendue" : status === "non attendue" ? "✗ non attendue" : status, "verdict"));
+      option.append(input, box, labelText);
+      input.addEventListener("change", () => {
+        if (question.singleAnswer || value === -1) {
+          draft.selected = input.checked ? [value] : [];
+        } else {
+          draft.selected = draft.selected.filter((choice) => choice !== -1 && choice !== value);
+          if (input.checked) draft.selected.push(value);
+        }
+        choices.querySelectorAll("input").forEach((control) => {
+          control.checked = draft.selected.includes(Number(control.value));
+        });
+        update();
+      });
+      choices.append(option);
+    };
+    question.choices.forEach((text, value) => addChoice(text, value, question.choiceFigures[value]));
+    if (!question.explicitNone && !fullyNormalized) addChoice("Aucune de ces propositions n’est exacte", -1);
+    form.append(choices);
+  }
+  if (!locked) {
+    update();
+    form.append(submit);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (submit.disabled || attempts[index]) return;
+      const actual = graded(draft.selected.filter((choice) => choice >= 0));
+      scores[index] = !question.countsForScore ? null
+        : isQroc ? scoreQroc(question.correctAnswerText, draft.text)
+        : scoreQcm({ ...question, indispensables: graded(question.indispensables), inacceptables: graded(question.inacceptables) }, expected, actual);
+      attempts[index] = 1;
+      showQuestion(index);
+      document.querySelector("#question-" + index + " .correction")?.focus();
+    });
+  }
+  card.append(form);
+  if (locked) {
+    const feedback = element("section", "", "correction");
+    feedback.tabIndex = -1;
+    feedback.append(element("h3", "Corrigé"));
+    feedback.append(element("p", scores[index] === null ? (question.localization ? "Auto-évaluation" : "Hors barème")
+      : "Points obtenus : " + String(scores[index]).replace(".", ",") + " / 1", "points " + tone(index)));
+    if ((isQroc || question.localization) && question.correctAnswerText) {
+      feedback.append(element("p", "Réponse attendue · " + question.correctAnswerText));
+    }
+    if (question.explanation) feedback.append(element("p", question.explanation));
+    question.correctionFigures.forEach((figure, i) => appendImage(feedback, figure.inlineUrl, "Schéma du corrigé " + (i + 1)));
+    card.append(feedback);
+  }
+  if (!solo) return { card, heading };
+
+  const pager = element("div", "", "pager");
+  const prev = questions.findLastIndex((_, i) => i < index && !fermee(i));
+  const back = button("", () => showQuestion(prev), "ghost");
+  back.append(icon("back"), element("span", "Précédent"));
+  back.disabled = prev === -1;
+  pager.append(back);
+  const next = questions.findIndex((_, i) => i > index && !fermee(i));
+  const right = element("div", "", "pager-right");
+  if (questions[index + 1] && fermee(index + 1)) {
+    const hint = element("span", "", "muted small lock-hint");
+    hint.append(icon("lock"), document.createTextNode(" La question " + numero(index + 1) + " se débloque quand tu valides celle-ci."));
+    right.append(hint);
+    if (next !== -1) {
+      const skip = button("", () => showQuestion(next), "ghost");
+      skip.append(element("span", "Dossier suivant"), icon("chevron"));
+      right.append(skip);
+    }
+  } else if (next !== -1) {
+    const forward = button("", () => showQuestion(next), locked ? "primary" : "ghost");
+    forward.append(element("span", locked ? "Question suivante" : "Passer"), icon("chevron"));
+    right.append(forward);
+  } else if (answeredCount() === questions.length) {
+    right.append(button("Voir mon score", showResult, "primary"));
+  }
+  pager.append(right);
+  card.append(pager);
+  return { card, heading };
+}
+
+function showQuestion(index) {
+  if (index < 0 || fermee(index)) return;
+  finished = false;
+  current = index;
+  renderTopbar();
+  renderPanel();
+  if (viewMode === "one") {
+    const { card, heading } = buildCard(index, true);
+    main.replaceChildren(card);
+    window.scrollTo({ top: 0 });
+    heading.focus({ preventScroll: true });
+    return;
+  }
+  const cards = questions.map((_, i) => (fermee(i) ? lockedCard(i) : buildCard(i, false).card));
+  main.replaceChildren(...cards);
+  const target = cards[index];
+  const top = target.getBoundingClientRect().top + window.scrollY - (document.querySelector(".topbar")?.offsetHeight ?? 0) - 16;
+  window.scrollTo({ top: Math.max(0, top) });
+}
+
+function showResult() {
+  finished = true;
+  if (stopwatch.since !== null) { stopwatch.accumMs = stopwatchMs(); stopwatch.since = null; }
+  renderClock();
+  renderTopbar();
+  renderPanel();
+  const card = element("article", "", "card result");
+  const heading = element("h2", "Annale terminée");
+  heading.tabIndex = -1;
+  card.append(heading, element("p", gradedTotal
+    ? pointsTotal().toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " / " + gradedTotal + " points"
+    : "Annale hors barème", "big"));
+  card.append(element("p", "Temps passé : " + formatStopwatch(stopwatchMs()), "muted"));
+  card.append(button("Recommencer", () => {
+    attempts = {};
+    scores = [];
+    drafts = [];
+    flagged = {};
+    stopwatch.accumMs = 0;
+    stopwatch.since = Date.now();
+    renderClock();
+    showQuestion(0);
+  }, "primary"));
+  main.replaceChildren(card);
+  window.scrollTo({ top: 0 });
+  heading.focus({ preventScroll: true });
+}
+
+renderClock();
+setInterval(renderClock, 1000);
+renderPanelVisibility();
+if (questions.length) showQuestion(0);
+else main.append(element("p", "Cette annale ne contient aucune question."));
+</script></body></html>

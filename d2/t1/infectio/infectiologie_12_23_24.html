@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Infectiologie 12/23-24</title>
+<style>/* Lecteur autonome d'une annale exportée — calqué sur le lecteur du site :
+   fond aurore, barre du haut et panneau de navigation qui restent à l'écran. */
+:root {
+  color-scheme: light;
+  --ink: #0f1b3d;
+  --muted: #5b6785;
+  --line: rgba(15, 27, 61, .10);
+  --card: rgba(255, 255, 255, .78);
+  --navy: #0b1f4f;
+  --accent: #0ea5c6;
+  --sel: #2f5bd8;
+  --ok: #16a34a;
+  --part: #f59e0b;
+  --bad: #dc2626;
+  --rec: #2563eb;
+  --top: 76px;
+  --surface: rgba(255, 255, 255, .76);
+  --surface-2: rgba(255, 255, 255, .7);
+  --edge: rgba(255, 255, 255, .85);
+  --solid: #ffffff;
+  --tint: rgba(15, 27, 61, .07);
+  --line-strong: rgba(15, 27, 61, .15);
+  --box-line: #3b4664;
+  --switch-off: #d4d9e4;
+  --ok-ink: #11713a; --part-ink: #8a5a00; --bad-ink: #a11d1d; --rec-ink: #1d4ed8;
+  --part-bg: #fff4dc;
+  --aurora: radial-gradient(60rem 30rem at 0% 0%, rgba(110, 231, 196, .55), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 0%, rgba(125, 211, 252, .55), transparent 60%),
+    radial-gradient(60rem 40rem at 40% 60%, rgba(196, 181, 253, .45), transparent 65%),
+    radial-gradient(50rem 40rem at 100% 100%, rgba(165, 243, 252, .5), transparent 60%),
+    #eef6fb;
+  font: 15px/1.55 "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-padding-top: calc(var(--top) + 24px); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--aurora);
+  background-attachment: fixed;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.icon { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 3px solid rgba(47, 91, 216, .45); outline-offset: 2px; }
+
+/* --- Barre du haut, collée en haut de l'écran --- */
+.topbar {
+  position: sticky; top: 12px; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  width: min(100% - 24px, 1180px); margin: 12px auto 0; padding: .8rem 1rem .8rem 1.25rem;
+  border: 1px solid var(--edge); border-radius: 22px;
+  background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(15, 27, 61, .18);
+}
+.titles { min-width: 0; }
+.topbar h1 { margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { display: flex; align-items: center; gap: .6rem; margin: .2rem 0 0; color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.pill { white-space: nowrap; padding: .1rem .55rem; border-radius: 999px; background: var(--tint); color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tools { display: flex; align-items: center; gap: .5rem; flex: none; }
+.chip {
+  display: inline-flex; align-items: center; gap: .45rem; height: 38px; padding: 0 .85rem;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2);
+  font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  box-shadow: 0 4px 12px -8px rgba(15, 27, 61, .3); transition: transform .12s, background-color .12s;
+}
+.chip:active { transform: scale(.96); }
+.clock[aria-pressed="true"] { border-color: rgba(245, 158, 11, .55); background: var(--part-bg); color: var(--part-ink); }
+.nav-toggle { border-color: rgba(47, 91, 216, .45); background: rgba(47, 91, 216, .08); color: var(--sel); }
+.nav-toggle .count {
+  display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 .4rem; border-radius: 999px;
+  background: linear-gradient(135deg, #22c4c4, #0ea5c6); color: white; font-size: .72rem; font-weight: 800;
+}
+
+/* --- Mise en page : questions à gauche, navigation à droite --- */
+.layout { width: min(100% - 24px, 1180px); margin: 18px auto 40px; }
+@media (min-width: 1024px) {
+  body.panel-open .layout { display: grid; grid-template-columns: minmax(0, 1fr) 16.5rem; gap: 20px; align-items: start; }
+  #panel { position: sticky; top: calc(var(--top) + 24px); max-height: calc(100vh - var(--top) - 40px); overflow: auto; }
+  body:not(.panel-open) #panel { display: none; }
+  .scrim { display: none; }
+}
+@media (max-width: 1023.98px) {
+  #panel {
+    position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: min(88vw, 20rem); overflow: auto;
+    border-radius: 24px 0 0 24px; transform: translateX(105%); transition: transform .25s ease;
+  }
+  body.panel-open #panel { transform: none; }
+  .scrim { position: fixed; inset: 0; z-index: 30; background: rgba(15, 27, 61, .25); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  body.panel-open .scrim { opacity: 1; pointer-events: auto; }
+  .nav-toggle .label { display: none; }
+}
+
+/* --- Panneau de navigation --- */
+#panel {
+  padding: 14px; border: 1px solid var(--edge); border-radius: 24px;
+  background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(15, 27, 61, .18);
+}
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.panel-head h2 { margin: 0; font-size: .92rem; font-weight: 800; }
+.panel-head p { margin: .1rem 0 0; }
+.icon-button {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--muted);
+}
+.icon-button:hover { color: var(--ink); }
+.progress { height: 5px; margin: .75rem 0; border-radius: 999px; background: var(--tint); overflow: hidden; }
+.progress div { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6d8cf5, #22c4c4); transition: width .3s; }
+.tiles-scroll { max-height: 16rem; overflow: auto; padding-right: 4px; }
+.group + .group { margin-top: .6rem; }
+.group-label { margin-bottom: .3rem; font-size: .72rem; font-weight: 800; color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.tile {
+  position: relative; height: 36px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface-2); color: var(--muted); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  transition: transform .12s;
+}
+.tile:not(:disabled):hover { transform: translateY(-1px); }
+.tile:disabled { opacity: .5; }
+.tile[aria-current] { border: 2px solid var(--navy); color: var(--ink); box-shadow: 0 0 0 3px rgba(11, 31, 79, .12); }
+.tile.correct { border-color: rgba(22, 163, 74, .45); background: rgba(22, 163, 74, .14); color: var(--ok-ink); }
+.tile.partial { border-color: rgba(245, 158, 11, .5); background: rgba(245, 158, 11, .15); color: var(--part-ink); }
+.tile.wrong { border-color: rgba(220, 38, 38, .45); background: rgba(220, 38, 38, .12); color: var(--bad-ink); }
+.tile.recorded { border-color: rgba(37, 99, 235, .45); background: rgba(37, 99, 235, .12); color: var(--rec-ink); }
+.tile.draft::after { content: ""; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--sel); box-shadow: 0 0 0 2px white; }
+.tile-lock { position: absolute; top: -5px; right: -5px; width: 13px; height: 13px; padding: 1px; border-radius: 50%; background: var(--solid); color: var(--muted); }
+.tile-flag { position: absolute; top: -4px; left: -4px; width: 11px; height: 11px; border-radius: 3px; background: var(--part); box-shadow: 0 0 0 2px white; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 55%, 0 70%); }
+.legend { display: flex; flex-wrap: wrap; gap: .25rem .7rem; margin-top: .7rem; font-size: .72rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.correct { background: var(--ok); } .dot.partial { background: var(--part); } .dot.wrong { background: var(--bad); }
+.dot.recorded { background: var(--rec); } .dot.flagged { background: var(--part); border-radius: 2px; }
+.segment { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-top: .8rem; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); }
+.segment button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: .8rem; font-weight: 700; }
+.segment button.active { background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+.row {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 40px; margin-top: .55rem;
+  padding: .45rem .8rem; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2);
+  color: var(--ink); font-size: .8rem; font-weight: 600; text-align: left;
+}
+.row-text { display: inline-flex; align-items: center; gap: .45rem; }
+.switch { position: relative; width: 34px; height: 20px; flex: none; border-radius: 999px; background: var(--switch-off); transition: background-color .15s; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--solid); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: left .15s; }
+.switch.on { background: var(--sel); }
+.switch.on::after { left: 16px; }
+.finish { width: 100%; height: 42px; margin-top: .7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--muted); font-weight: 700; }
+.finish.ready { border: 0; background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+
+/* --- Carte de question --- */
+main#annale { min-width: 0; }
+main#annale > * + * { margin-top: 16px; }
+.card {
+  padding: clamp(18px, 3.2vw, 30px); border: 1px solid var(--edge); border-radius: 26px;
+  background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 14px 34px -16px rgba(15, 27, 61, .2);
+}
+.card.current { box-shadow: 0 0 0 2px rgba(47, 91, 216, .35), 0 14px 34px -16px rgba(15, 27, 61, .2); }
+.card.locked { display: flex; align-items: center; gap: .9rem; padding: 16px 20px; background: var(--surface-2); }
+.card.locked p { margin: .1rem 0 0; }
+.lock-badge { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--tint); color: var(--muted); }
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+.section-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .7rem; border-radius: 999px; background: var(--tint); font-size: .78rem; font-weight: 700; }
+.section-pill .icon { color: #e11d48; }
+.flag { border: 0; background: none; width: 34px; height: 34px; border-radius: 50%; }
+.flag.on { background: rgba(245, 158, 11, .15); color: var(--part-ink); }
+.flag.on .icon { fill: currentColor; }
+.context { margin: 0 0 1rem; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.prompt { margin: 0; font-size: clamp(1.05rem, 2.3vw, 1.2rem); font-weight: 750; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qnum { color: var(--accent); font-weight: 800; }
+.prompt:focus, .correction:focus, .result h2:focus { outline: none; }
+.state { display: flex; align-items: center; gap: .4rem; margin: .45rem 0 1.1rem; font-size: .8rem; color: var(--muted); }
+.state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.state.done { color: var(--rec); }
+.figures img, .correction img { display: block; max-width: 100%; max-height: 22rem; height: auto; margin: .5rem auto; border-radius: 14px; border: 1px solid var(--line); background: var(--solid); }
+fieldset.options { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.option {
+  position: relative; display: flex; align-items: center; gap: .9rem; margin: 0 0 12px; padding: .95rem 1rem;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--surface-2); cursor: pointer;
+  transition: border-color .12s, background-color .12s;
+}
+.option:hover { border-color: rgba(47, 91, 216, .35); }
+.option input { position: absolute; opacity: 0; pointer-events: none; }
+.letter { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border: 1px solid var(--line); border-radius: 8px; background: var(--solid); font-size: .74rem; font-weight: 800; color: var(--muted); }
+.box { width: 22px; height: 22px; flex: none; border: 1.5px solid var(--box-line); border-radius: 6px; background: var(--solid); }
+.box.round { border-radius: 50%; }
+.option input:checked ~ .box { border-color: var(--sel); background: var(--sel); box-shadow: inset 0 0 0 3px white; }
+.option:has(input:checked) { border-color: rgba(47, 91, 216, .55); background: rgba(47, 91, 216, .07); }
+.option:has(input:focus-visible) { outline: 3px solid rgba(47, 91, 216, .45); outline-offset: 2px; }
+.option-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-weight: 500; }
+.option-text img { display: block; max-width: 100%; max-height: 18rem; margin-top: .5rem; border-radius: 10px; }
+.option[data-status="attendue"] { border-color: rgba(22, 163, 74, .5); background: rgba(22, 163, 74, .09); }
+.option[data-status="non attendue"] { border-color: rgba(220, 38, 38, .45); background: rgba(220, 38, 38, .07); }
+.option[data-status="neutralisée"] { background: var(--tint); }
+.verdict { display: block; margin-top: .2rem; font-weight: 700; font-size: .75rem; }
+[data-status="attendue"] .verdict { color: var(--ok-ink); } [data-status="non attendue"] .verdict { color: var(--bad-ink); }
+.free-answer { display: grid; gap: .4rem; margin-bottom: 1rem; }
+.free-answer input { width: 100%; height: 48px; padding: 0 1rem; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--solid); font: inherit; color: inherit; }
+.free-answer input.correct { border: 2px solid var(--ok); background: rgba(22, 163, 74, .08); color: var(--ok-ink); }
+.free-answer input.partial { border: 2px solid var(--part); background: rgba(245, 158, 11, .1); color: var(--part-ink); }
+.free-answer input.wrong { border: 2px solid var(--bad); background: rgba(220, 38, 38, .07); color: var(--bad-ink); }
+.submit {
+  width: 100%; height: 52px; margin-top: .4rem; border: 0; border-radius: 999px;
+  background: linear-gradient(90deg, #3f5fb5, #2fb9c6); color: white; font-weight: 800; font-size: 1rem;
+  box-shadow: 0 10px 24px -12px rgba(47, 91, 216, .6); transition: transform .12s, opacity .12s;
+}
+.submit:disabled { opacity: .55; box-shadow: none; }
+.submit:not(:disabled):active { transform: scale(.99); }
+.correction { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid rgba(47, 91, 216, .2); border-radius: 18px; background: rgba(47, 91, 216, .05); }
+.correction h3 { margin: 0 0 .3rem; font-size: .95rem; }
+.correction p { margin: .4rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.points { font-weight: 800; }
+.points.correct { color: var(--ok-ink); } .points.partial { color: var(--part-ink); } .points.wrong { color: var(--bad-ink); }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; margin-top: 1.2rem; }
+.pager-right { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .6rem; }
+.ghost, .primary {
+  display: inline-flex; align-items: center; gap: .35rem; height: 42px; padding: 0 1.1rem; border-radius: 999px; font-weight: 700; font-size: .88rem;
+}
+.ghost { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.ghost:disabled { opacity: .45; }
+.primary { border: 0; background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+.lock-hint { display: inline-flex; align-items: center; gap: .3rem; }
+.link { margin: .2rem 0 .6rem; border: 0; background: none; color: var(--sel); font-weight: 600; padding: 0; }
+.result { text-align: center; }
+.result h2 { margin: 0; font-size: 1.4rem; }
+.big { font-size: 2rem; font-weight: 800; margin: .6rem 0; }
+.result .primary { margin-top: .6rem; }
+.localisation { margin: .7rem 0; }
+.zone { display: inline-block; position: relative; padding: 0; border: 0; max-width: 100%; background: none; }
+button.zone { cursor: crosshair; }
+.zone img { display: block; max-width: 100%; margin: 0; border-radius: 12px; }
+.point { position: absolute; transform: translate(-50%, -50%); min-width: 1.6rem; border: 2px solid white; border-radius: 50%; background: var(--sel); color: white; text-align: center; pointer-events: none; }
+.point.cursor { visibility: hidden; }
+.zone:focus-visible .point.cursor { visibility: visible; }
+
+/* --- Mode sombre : réglage de l'appareil par défaut, bouton ☀️/🌙 pour choisir --- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e8edf8; --muted: #9aa6c3; --line: rgba(255, 255, 255, .10); --line-strong: rgba(255, 255, 255, .18);
+  --card: rgba(22, 26, 48, .78); --surface: rgba(22, 26, 48, .78); --surface-2: rgba(255, 255, 255, .05);
+  --edge: rgba(255, 255, 255, .08); --solid: #1b2140; --tint: rgba(255, 255, 255, .08);
+  --navy: #3b5bdb; --accent: #5ccfe6; --sel: #7c9cff; --box-line: #8b97b8; --switch-off: #3a4363;
+  --ok-ink: #6ee7a0; --part-ink: #fbbf5c; --bad-ink: #ff8a8a; --rec-ink: #93b4ff; --part-bg: rgba(245, 158, 11, .16);
+  --aurora: radial-gradient(60rem 30rem at 10% 0%, rgba(56, 40, 120, .55), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 10%, rgba(20, 90, 120, .45), transparent 60%),
+    radial-gradient(60rem 40rem at 40% 70%, rgba(90, 30, 110, .40), transparent 65%),
+    #0b0f22;
+}
+:root[data-theme="dark"] .figures img, :root[data-theme="dark"] .correction img, :root[data-theme="dark"] .option-text img { background: #ffffff; }
+.theme-toggle { width: 38px; justify-content: center; padding: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style></head><body>
+<header class="topbar"><div class="titles"><h1>Infectiologie 12/23-24</h1><p class="sub"><span id="position" aria-live="polite"></span><span id="score" class="pill"></span></p></div><div class="tools" id="tools"></div></header>
+<div class="layout"><main id="annale"></main><aside id="panel" aria-label="Navigation de l'examen"></aside></div>
+<div class="scrim" aria-hidden="true"></div>
+<noscript>Active JavaScript pour répondre aux questions de cette annale.</noscript>
+<script type="application/json" id="soschimie-annale-data">{"title":"Infectiologie 12/23-24","questions":[{"id":"q-1","type":"qcm","choices":["A. d’infections cutanées","B. d’infections des muqueuses","C. d’infections des ongles","D. d’infections pulmonaires","E. d’infections invasives"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Les dermatophytes peuvent être responsables ?","section":"SQI1","qNumber":"1","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : les dermatophytes colonisent la kératine de la peau. B. faux : ils n'atteignent pas les muqueuses (c'est le rôle de Candida). C. vrai : ils provoquent des onychomycoses. D. faux : pas d'atteinte pulmonaire. E. faux : ils restent superficiels, sans infection invasive.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-2","type":"qcm","choices":["A. les poux de tête peuvent survivre plusieurs jours sur des vêtements","B. les poux de tête sont des insectes hématophages","C. les poux de tête parasitent les enfants et les adultes","D. les repas sanguins des poux sont responsables de prurit du cuir chevelu","E. les poux de tête peuvent sauter d’une tête à une autre"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes sur les poux de tête, indiquez celles qui sont justes :","section":"SQI1","qNumber":"2","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : Ils ne vivent que quelques heures hors du cuir chevelu. B. vrai : ils se nourrissent de sang. C. vrai : tous les âges peuvent être parasités. D. vrai : la piqûre et la salive provoquent le prurit. E. faux : Les poux ne sautent pas et ne marchent pas.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-3","type":"qcm","choices":["A. La sinusite sphénoïdale est la première cause de sinusite du nourrisson","B. La sinusite maxillaire est la plus à risque de complication neurologique par diffusion de proximité","C. La méningite et la thrombophlébite septique du sinus caverneux sont deux complications possibles des sinusites bactériennes","D. Un scanner est recommandé d’emblée devant les formes frontales, ethmoïdales et sphénoïdales pour confirmer le diagnostic et rechercher une complication","E. Une sinusite maxillaire bactérienne est évoquée devant une douleur et une rhinorrhée unilatérales persistant plus de 48h sous traitement symptomatique"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Concernant les sinusites, quelle est/quelles sont la/les proposition(s) vraie(s) ?","section":"SQI1","qNumber":"3","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[2,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : l'ethmoïdite est la sinusite typique du nourrisson. B. faux : les sinusites frontale, ethmoïdale et sphénoïdale sont plus à risque neurologique. C. vrai : ce sont des complications intracrâniennes classiques. D. vrai : le scanner est indiqué d'emblée dans ces formes. E. vrai : selon le corrigé : douleur et rhinorrhée unilatérales persistantes sous traitement symptomatique orientent vers une origine bactérienne.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-4","type":"qcm","choices":["A. la gale donne habituellement un prurit","B. les espaces inter-digitaux sont souvent touchés","C. la gale n’est pas sexuellement transmissible","D. la gale est responsable d’épidémies dans les établissements pour personnes âgées","E. la gale peut être une affection nosocomiale"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi ces propositions suivantes sur la gale, quelle est la proposition fausse ?","section":"SQI1","qNumber":"4","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : le prurit est le signe principal. B. vrai : localisation typique. C. faux (à cocher) : la gale peut être sexuellement transmissible, c'est donc l'affirmation fausse. D. vrai : épidémies en EHPAD. E. vrai : transmission nosocomiale possible.","correctionSource":"officielle","inverted":true,"fullyNormalized":false,"countsForScore":true},{"id":"q-5","type":"qcm","choices":["A. Odynophagie","B. Douleur pharyngée uni- ou bi-latérale","C. Jamais de fièvre","D. Jamais d’adénopathies satellites","E. Jamais d’atteinte ORL associée (toux, rhinite, otalgie)"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions ci-dessous concernant la présentation clinique des angines virales de l’enfant et de l’adulte, laquelle/lesquelles est/sont vraies ?","section":"SQI1","qNumber":"5","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,1],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : douleur à la déglutition. B. vrai : douleur pharyngée. C. faux : la fièvre est possible. D. faux : adénopathies possibles. E. faux : toux, rhinite ou otalgie fréquentes.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-6","type":"qcm","choices":["A. la durée du traitement à visée curative est de 10 jours","B. la confirmation microbiologique n’est pas nécessaire avant de débuter le traitement","C. il est contre-indiqué chez la femme enceinte","D. il peut être prescrit en post-exposition chez les sujets à risque de complications","E. il peut être prescrit en post-exposition chez les sujets résidant en EHPAD"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Concernant le traitement antigrippal spécifique, quelles sont les propositions exactes ?","section":"SQI1","qNumber":"6","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : la durée curative est de 5 jours. B. vrai : le traitement est débuté sans attendre la confirmation. C. faux : il n'est pas contre-indiqué. D. vrai : prophylaxie post-exposition possible chez les sujets à risque. E. vrai : indiqué en EHPAD.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-7","type":"qcm","choices":["A. méningocoque","B. pneumocoque","C. listeria","D. bacille de Koch","E. entérovirus"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Un patient de 19 ans est hospitalisé pour un syndrome méningé de survenue brutale conduisant à faire une ponction lombaire. L'examen direct du liquide cérébro-spinal objective des diplocoques gram négatif encapsulés. Quel est l'agent infectieux a priori en cause dans cette méningite ?","section":"SQI1","qNumber":"7","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : diplocoque Gram négatif = Neisseria meningitidis. B. faux : le pneumocoque est Gram positif. C. faux : Listeria est un bacille Gram positif. D. faux : bacille acido-alcoolo-résistant. E. faux : virus non visible à l'examen direct.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-8","type":"qcm","choices":["A. le prurit est le principal symptôme","B. c'est est une parasitose fréquente","C. c'est une infection sexuellement transmissible","D. c'est une affection grave","E. les cils et les cheveux peuvent être parasités"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes sur la pthiriose, indiquez les propositions vraies :","section":"SQI1","qNumber":"8","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : prurit pubien. B. faux : Elle est rare. C. vrai : IST. D. faux : C’est une maladie bénigne. E. vrai : selon le corrigé : les poils, cils inclus, peuvent être atteints.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-9","type":"qcm","choices":["A. stade 1","B. stade 2","C. stade 3","D. stade 4","E. stade 5"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Un patient gros tabagique a une BPCO (bronchopneumopathie obstructive de l'adulte) connue depuis plusieurs années. A l'occasion d'une visite à domicile pour le suivi d'une fracture de poignet accidentelle, il vous fait part du fait que depuis plusieurs mois il est gêné pour respirer au moindre effort (par exemple en faisant sa toilette). A quel stade de la classification \"GOLD\" situez vous sa BPCO ?","section":"SQI1","qNumber":"9","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : stade 1 sans dyspnée notable. B. faux : stade 2 dyspnée à l'effort modéré. C. faux : stade 3 dyspnée sévère. D. vrai : dyspnée au moindre effort (toilette) = stade 4 selon le corrigé. E. faux : ce stade n'existe pas.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-10","type":"qcm","choices":["A. c’est un commensal de la peau","B. il est responsable d’infections fongiques superficielles","C. il est responsable d’infections fongiques invasives","D. il est capable d’émettre des pseudofilaments en conditions pathologiques","E. c’est un pathogène opportuniste"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes concernant Candida albicans, une seule est fausse, laquelle ?","section":"SQI1","qNumber":"10","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux (à cocher) : C’est un commensal des muqueuses digestive et génito-urinaire. B. vrai : candidoses cutanéo-muqueuses. C. vrai : candidémies. D. vrai : forme filamenteuse pathogène. E. vrai : pathogène opportuniste.","correctionSource":"officielle","inverted":true,"fullyNormalized":false,"countsForScore":true},{"id":"q-11","type":"qcm","choices":["A. âge","B. diabète insulino-dépendant","C. obésité IMC > 30","D. antécédent de cancer du sein","E. intervention chirurgicale 6 mois auparavant"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Une femme de 75 ans est hospitalisée pour une infection par le virus SARS-CoV-2. Dans ses antécédents on note un diabète mal contrôlé par son traitement, une obésité (IMC > 30) et un cancer du sein il y a 15 ans considéré comme en rémission complète. Elle a par ailleurs été opérée 6 mois auparavant d'une prothèse totale de hanche. Quel(s) est/sont le/les facteur(s) de risque de forme grave de son covid ?","section":"SQI1","qNumber":"11","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : l'âge est un facteur majeur. B. vrai : diabète. C. vrai : obésité. D. faux : cancer en rémission depuis 15 ans. E. faux : une chirurgie ancienne n'est pas un facteur de risque.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-12","type":"qcm","choices":["A. le fait que l'animal mordeur soit un chat","B. survenue très rapide des lésions après la morsure","C. la localisation à la main","D. le caractère très inflammatoire de la lésion","E. l'absence d'amélioration malgré désinfection locale"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Un homme de 23 ans consulte 2 jours après une morsure à la main par son chat. Il décrit la survenue d'une zone inflammatoire, douloureuse et congestive quelques heures après la morsure. Sa main est toujours très inflammatoire et il s'en étonne car il a commencé à désinfecter sa blessure à plusieurs reprises juste après la morsure. Vous évoquez une pasteurellose. Quels sont les éléments en faveur de ce diagnostic ?","section":"SQI1","qNumber":"12","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : Pasteurella multocida est portée par les chats. B. vrai : incubation très courte. C. faux : non spécifique. D. vrai : tableau très inflammatoire. E. faux : la désinfection ne prévient pas l'inoculation profonde et n'est pas discriminant.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-13","type":"qcm","choices":["A. les anticorps anti-VIH apparaissent en moyenne 3 semaines après la contamination","B. En France, le dépistage s’effectue avec un test ELISA combiné détectant à la fois les Ac anti-VIH-1, les Ac anti-VIH-2 et l’Ag P24","C. la confirmation de la séropositivité s'effectue par Western Blot","D. la mesure de l'ARN VIH plasmatique est le meilleur marqueur de la réplication virale","E. chez le nouveau-né, le diagnostic repose sur la mise en évidence des anticorps anti-VIH"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Quelle proposition ne s'applique pas au diagnostic de l'infection à VIH ?","section":"SQI1","qNumber":"13","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[4],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : les anticorps anti-VIH apparaissent en moyenne 3 semaines après la contamination. B. vrai : le dépistage repose en France sur un test ELISA combiné (Ac anti-VIH-1, anti-VIH-2 et Ag P24). C. vrai : la séropositivité est confirmée par Western Blot. D. vrai : l'ARN VIH plasmatique (charge virale) est le meilleur marqueur de la réplication virale. E. faux (à cocher) : chez le nouveau-né, les anticorps maternels transmis persistent plusieurs mois ; le diagnostic repose sur la recherche directe du virus (PCR), pas sur les anticorps.","correctionSource":"officielle","inverted":true,"fullyNormalized":false,"countsForScore":true},{"id":"q-14","type":"qcm","choices":["A. apparition d'un érythème controlatéral","B. majoration des douleurs malgré les antalgiques de palier 2","C. apparition de zones noirâtres au sein de l'érythème","D. décompensation du diabète","E. induration des tissus autour du placard inflammatoire"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Une patiente de 62 ans ayant comme principaux antécédents un retard mental, une obésité (IMC à 32), un diabète mal équilibré et une insuffisance veineuse des membres inférieurs consulte pour un placard inflammatoire douloureux de sa jambe droite pour lequel une évoquez une dermo-hypodermite aiguë bactérienne. Elle refuse l'hospitalisation que vous lui proposez. Quel(s) élément(s) de surveillance allez vous transmettre à l'infirmière qui fera les soins à domicile pour vous alerter précocement sur un risque d'évolution vers une fasciite nécrosante ?","section":"SQI1","qNumber":"14","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[1,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : non signe de nécrose. B. vrai : douleur disproportionnée. C. vrai : nécrose cutanée. D. faux : non spécifique. E. vrai : induration signe d'atteinte profonde.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-15","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"En dehors des causes infectieuses possibles, quelle étiologie devez vous évoquer de principe ?","section":"DP1","qNumber":"1","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"embolie pulmonaire","explanation":"Fièvre, toux et douleur thoracique après chirurgie de hanche et immobilisation : l'embolie pulmonaire doit être évoquée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-16","type":"qcm","choices":["A. improbable","B. peu probable","C. ni plus ou moins probable","D. probable","E. certain"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Si vous évoquez une pneumopathie\net que vous entendez à l’auscultation pulmonaire un foyer de crépitants à la base droite,\nen quoi cet élément conforte votre hypothèse ?","section":"DP1","qNumber":"2","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[3,4],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. non retenue. B. non retenue. C. non retenue. D. réponse retenue : un foyer de crépitants à la base droite est en faveur d'une pneumopathie. E. réponse retenue : le corrigé officiel valide aussi « certain ».","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-17","type":"qcm","choices":["A. Souffle tubaire au sommet droit","B. Diminution du murmure vésiculaire de la base droite","C. Sonorité tympanique de la base droite","D. Diminution des vibrations vocales de la base droite","E. Sifflement expiratoire"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Parmi les autres éléments sémiologiques suivants lequel conforterait l’hypothèse d’une pneumopathie basale droite chez cette patiente ?","section":"DP1","qNumber":"3","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[1],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : siège au sommet, pas à la base. B. vrai : le murmure vésiculaire diminue en regard du foyer. C. faux : on attend une matité. D. faux : les vibrations vocales sont augmentées dans une condensation. E. faux : évoque un bronchospasme.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-18","type":"qcm","choices":["A. oui","B. non"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Ses constantes sont les suivantes : TA 140/70 mm Hg, pouls 100 battements /mn, fréquence respiratoire : 20 cycles / mn. Il n’y a ni tirage, ni cyanose ni marbrures. Il y a t'il une indication à hospitaliser la patiente ?","section":"DP1","qNumber":"4","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[0],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : âge et terrain (diabète, hospitalisation récente) justifient l'hospitalisation. B. faux : ces critères de terrain l'indiquent malgré des constantes correctes.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-19","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"En dehors de l’âge indiquez en 3 à 4 mots, le deuxième critère de terrain justifiant l’hospitalisation","section":"DP1","qNumber":"5","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"hospitalisation dans l'année / hospitalisation récente / hospitalisation / séjour en clinique / séjour dans la clinique / hospitalisation en clinique","explanation":"Une hospitalisation récente est un critère de terrain.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-20","type":"qcm","choices":["A. Vous appelez quand même une ambulance","B. Vous demandez à la patiente de signer une décharge et vous quittez le domicile","C. Vous quittez le domicile en indiquant que dans ces conditions vous ne ferez aucune prescription","D. Vous réitérez votre conseil d’hospitalisation et vous prescrivez le traitement pour cette pneumopathie","E. Vous prescrivez le traitement pour cette pneumopathie mais vous indiquez qu’à l’avenir vous ne voulez plus les soigner"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Vous recommandez l’hospitalisation en expliquant bien les raisons mais la patiente et son mari s’y refusent absolument et demandent un traitement à domicile. Quelle attitude vous parait la plus adaptée ?","section":"DP1","qNumber":"6","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : le refus de soins éclairé doit être respecté. B. faux : abandon de la patiente. C. faux : refus de soins injustifié. D. vrai : respect du choix, information répétée et traitement. E. faux : attitude punitive et contraire à la déontologie.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-21","type":"qcm","choices":["A. Cotrimoxazole","B. Fluoroquinolones à activité pulmonaire","C. Amoxicilline","D. Amoxicilline – acide clavulanique","E. Azithromycine"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Vous avez décidé de prescrire le traitement de cette très probable pneumopathie en respectant le choix de ce couple qui ne présente aucun trouble cognitif. Quel(s) antibiotique(s) vous parait(ssent) le/les plus adapté(s) ?","section":"DP1","qNumber":"7","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":false,"explicitNone":false,"indispensables":[3],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : non adapté aux pneumopathies communautaires. B. faux : à réserver aux situations particulières. C. faux : insuffisant chez une patiente à risque. D. vrai (indispensable) : couvre pneumocoque et germes producteurs de bêta-lactamase. E. faux : macrolide non indiqué en première intention ici.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-22","type":"qcm","choices":["A. Diarrhée dans le cadre d’une pneumopathie à légionnelle","B. Diarrhée aux antibiotiques","C. Infection à Clostridioides difficile","D. Infection à E. coli entérotoxinogène","E. toxi infection alimentaire"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Selon votre décision commune la patiente vous rappelle le lendemain pour vous dire qu’elle va mieux et vous repassez 8 jours plus tard. Elle n’a pratiquement plus de symptômes pulmonaires et est apyrétique. Par contre elle vous indique que depuis la veille elle a de la diarrhée avec 3 à 4 selles molles à liquides. Son mari n’a aucun trouble digestif. Dans ce contexte quelle/s est/sont votre/vos hypothèse(s) ?","section":"DP1","qNumber":"8","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[2],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : patiente guérie sur le plan pulmonaire. B. vrai : diarrhée post-antibiotique fréquente. C. vrai (indispensable) : C. difficile après antibiotiques et hospitalisation. D. faux : pas de contexte de voyage. E. faux : mari indemne.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-23","type":"qcm","choices":["A. Vaccin anti-grippe","B. Vaccin anti-sars cov2","C. Vaccin anti –hépatite B","D. Vaccin conjugué anti-pneumocoque 13-valent","E. Vaccin non conjugué anti-pneumocoque 23-valent"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Au cours de cette consultation vous abordez la mise à jour vaccinale. Elle est uniquement à jour du vaccin diphtérie/ tétanos/polio/coqueluche et a eu 1 dose du vaccin anti-sars cov2 en 2021 . Quel(s) vaccin(s) lui proposez vous de faire ?","section":"DP1","qNumber":"9","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : âge et diabète, saison. B. vrai : schéma incomplet. C. faux : pas d'indication. D. vrai : schéma pneumococcique. E. vrai : complète le 13-valent.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-24","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Il est justifié de vacciner cette patiente contre le pneumocoque avec les 2 vaccins conjugué anti-pneumocoque 13-valent et non conjugué anti-pneumocoque 23-valent. Quel délai minimum faut il respecter entre ces 2 vaccins (en semaines) ? (indiquez juste une valeur numérique)","section":"DP1","qNumber":"10","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"8","explanation":"Le délai minimum est de 8 semaines entre le vaccin conjugué et le non conjugué.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-25","type":"qcm","choices":["A. oui","B. non"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Faut il faire d’abord le vaccin conjugué anti-pneumocoque 13-valent puis le non conjugué anti-pneumocoque 23- valent ?","section":"DP1","qNumber":"11","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[0],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : le conjugué d'abord amorce la réponse immunitaire. B. faux : l'ordre inverse n'est pas recommandé.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-26","type":"qcm","choices":["A. Vaccination contre la fièvre jaune","B. Vaccin contre la typhoïde","C. Chimioprophylaxie contre le paludisme par atovaquone-proguanil","D. Lavage des mains avant les repas en prévention de la diarrhée du voyageur","E. Fluoroquinolone en prévention de la diarrhée du voyageur pendant tout le séjour"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Fin octobre, vous intervenez à domicile à la demande d’une infirmière pour une femme de 78 ans, en assez bon état général présentant de la toux et de la fièvre. Depuis 6 mois elle a une activité très réduite du fait d’une arthrose évoluée notamment des hanches et des genoux responsable de douleurs invalidantes. Elle vit avec son mari de 75 ans, autonome. Elle sort d’une hospitalisation de 8 jours dans une clinique où elle a été hospitalisée pour pose d’une prothèse de hanche. A l’examen elle a une fièvre à 38°2 C. En dehors de la fièvre, elle se plaint d’une toux et une douleur thoracique droite d’intensité modérée. Son examen neurologique est normal. En dehors d’un diabète correctement équilibré par régime et 2 molécules anti-diabète orales, la patiente n’a pas d’antécédents significatifs ni d’allergie connue.","prompt":"Le mari profite de votre présence pour vous demander conseil car il part dans 1 mois en Chine pour un séjour de 15 jours chez sa fille qui y vit en expatriation. Quelle(s) prévention(s) lui recommandez vous ?","section":"DP1","qNumber":"12","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":false,"explicitNone":false,"indispensables":[3],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : pas de fièvre jaune en Chine. B. faux : séjour court en ville. C. faux : pas de paludisme. D. vrai (indispensable) : mesure simple efficace. E. faux : antibioprophylaxie non recommandée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-27","type":"qcm","choices":["A. Confusion","B. Hypotension artérielle systolique \u003c 100 mmHg","C. Syndrome méningé","D. Tachypnée avec fréquence respiratoire > 22 / minutes","E. Anurie"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"Quels signes de gravité recherchez-vous immédiatement pour calculer le score quickSOFA ?","section":"DP2","qNumber":"1","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[0,1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[1],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : trouble de conscience, critère qSOFA. B. vrai (indispensable) : PAS ≤ 100 mmHg, critère qSOFA. C. faux : pas un critère qSOFA. D. vrai : FR ≥ 22/min, critère qSOFA. E. faux : l'anurie n'est pas un critère qSOFA.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-28","type":"qcm","choices":["A. Bandelette urinaire","B. ECBU","C. NFS","D. Gaz du sang avec lactates","E. Aucun"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"Votre examen est dans les limites de la normale en dehors de douleurs sus pubiennes. Quel(s) examens complémentaires prescrivez-vous ?","section":"DP2","qNumber":"2","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[1],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : orientation initiale. B. vrai (indispensable) : indispensable, documente l'infection. C. vrai : recherche d'un syndrome inflammatoire. D. faux : pas de signe de gravité. E. faux : des examens sont nécessaires.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-29","type":"qcm","choices":["A. Cystite aiguë simple","B. Cystite aiguë à risque de complication","C. Endométrite aiguë","D. Pyélonéphrite aiguë simple","E. Pyélonéphrite aiguë à risque de complications"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"La bandelette urinaire retrouve une leucocyturie significative et des nitrites, et l’absence d’hématurie. La NFS retrouve une hyperleucocytose à polynucléaires neutrophiles à 19 G/L, une CRP à 137 UI/mL et une créatinine à 110 micromoles/ml (DFG 65 ml/min).\nQuel est votre diagnostic ?","section":"DP2","qNumber":"3","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[4],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : fièvre et syndrome inflammatoire. B. faux : atteinte haute. C. faux : signes urinaires. D. faux : le corrigé officiel retient une pyélonéphrite à risque de complication (E) chez cette patiente de 74 ans diabétique, pas une forme simple. E. vrai : fièvre, signes urinaires, patiente de 74 ans diabétique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-30","type":"qcm","choices":["A. Antibiothérapie probabiliste par amoxicilline + ac clavulanique per os","B. Antibiothérapie probabiliste par C3G IV","C. Hospitalisation","D. Explications à la patiente que l'absence de signes de gravité permet son retour à domicile sans antibiotiques sous réserve de reconsulter dans 48-72 heures","E. Explications à la patiente que l'absence de signes de gravité permet son retour à domicile sous antibiotiques sous réserve de reconsulter dans 48-72 heures"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"Quelle est votre attitude thérapeutique immédiate ?","section":"DP2","qNumber":"4","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : voie orale non adaptée en probabiliste. B. vrai : C3G IV recommandée. C. vrai : terrain à risque. D. faux : antibiotiques nécessaires. E. faux : retour à domicile non adapté.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-31","type":"qcm","choices":["A. Hydratation par voie veineuse avec du glucosé à 5%","B. Hydratation par voie veineuse sérum salé à 9 pour 1000","C. Poursuite du traitement par metformine","D. Protocole insuline basal bolus","E. Antipyrétique-antalgie par paracétamol"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"Vous avez hospitalisé la patiente et débuté un traitement par cefotaxime. Quelle(s) est(sont) vos mesures thérapeutiques associées ?","section":"DP2","qNumber":"5","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : le glucosé aggrave l'hyperglycémie. B. vrai : réhydratation par sérum salé. C. faux : metformine arrêtée en cas d'infection sévère (risque d'acidose lactique). D. vrai : insuline pour équilibrer le diabète. E. vrai : traitement symptomatique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-32","type":"qcm","choices":["A. Absence de leucocyturie significative","B. Leucocyturie significative","C. Absence de bactériurie significative","D. Bactériurie significative","E. Présence d'une bactérie sécrétrice d'une bétalactamase à spectre étendu"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"L’ECBU revient positif avec une leucocyturie à 10⁵/mL et la présence d’un Citrobacter koseri (entérobactérie) à 10⁵/mL avec un antibiogramme retrouvant une résistance à l’amoxicilline, une sensibilité au cotrimoxazole, aux fluoroquinolones et au cefotaxime. Quelles sont les propositions exactes ?","section":"DP2","qNumber":"6","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : 10^5/mL dépasse le seuil de 10^4. B. vrai. C. faux : 10^5 UFC/mL est significatif. D. vrai. E. faux : sensible au cefotaxime, donc pas de BLSE.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-33","type":"qcm","choices":["A. Poursuite de l'antibiothérapie à l'identique avec une C3G","B. Relai oral de l'antibiothérapie par amoxicilline per os","C. Relai oral de l'antibiothérapie par cotrimoxazole per os","D. Relai oral de l'antibiothérapie par fluorquinolone per os","E. Prescription d'un ECBU de contrôle"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"Vous concluez à une pyélonéphrite à Citrobacter koseri","section":"DP2","qNumber":"7","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[1],"normalises":[],"correctAnswerText":"","explanation":"A. faux : un relais oral est préférable. B. faux (inacceptable) : la bactérie est résistante à l'amoxicilline. C. vrai : bactérie sensible au cotrimoxazole, qui a un moindre impact écologique. D. faux : le cotrimoxazole est préféré aux fluoroquinolones pour son moindre impact écologique. E. faux : pas d'ECBU de contrôle systématique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-34","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"Vous décidez de faire un relais oral par cotrimoxazole qui a un moindre impact écologique. Quelle durée totale de l’antibiothérapie recommandez-vous ?","section":"DP2","qNumber":"8","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"10 jours / 10 j / 10","explanation":"Pyélonéphrite à risque de complications traitée par cotrimoxazole : durée totale de 10 jours selon le corrigé.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-35","type":"qcm","choices":["A. Un rendez-vous en consultation gynécologie","B. Un dépistage du cancer du col de l'utérus par frottis cervico-vaginal","C. Un dépistage du cancer du col de l'utérus par recherche de papillomavirus sur un auto-prélèvement vaginal","D. Un dépistage du cancer du sein par mammographie","E. Un dépistage du cancer du sein par échographie mammaire"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 74 ans, diabétique sous metformine, qui se présente pour fièvre et brûlures urinaires.A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 38,5°C depuis 48 heures, avec asthénie et des douleurs sus pubiennes. Elle a du mal à se lever mais bouge correctement ses quatre membres. Sa glycémie au doigt est à 2,5 g/L avec une cétonémie à 0,4 mmol/l.","prompt":"Alors que vous en profitez pour faire un point sur le suivi gynécologique de la patiente. La patiente vous rapporte ne pas avoir vu de gynécologue ni sage-femme depuis plus de 10 ans. Que lui proposez-vous ?","section":"DP2","qNumber":"9","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[0,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : suivi gynécologique. B. faux : dépistage du col au-delà de 65 ans non indiqué par frottis. C. faux : même raison. D. vrai : mammographie jusqu'à 74 ans. E. faux : l'échographie n'est pas un dépistage.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-36","type":"qcm","choices":["A. Des ulcérations génitales","B. Un prurit vulvaire","C. Une inflammation cervicale au spéculum","D. De la fièvre","E. Des métrorragies","F. Des douleurs pelviennes","G. Des douleurs latéralisées au toucher vaginal","H. Des brûlures urinaires","I. Une hépatalgie"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 25 ans vient consulter au centre gratuit d’information, de dépistage et de diagnostic du VIH et des IST (Cegidd) car elle se plaint depuis quelques jours de pertes vaginales plus abondantes que d’habitude et d’aspect purulent. Elle a eu des rapports non protégés avec son nouveau partenaire.","prompt":"Quels sont les 2 signes cliniques les plus importants à rechercher à l’examen clinique ?","section":"KFP1","qNumber":"1","sourceSegmentTitle":"KFP1","localization":false,"needsImage":false,"correctAnswers":[3,6],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : non retenu par le corrigé, ce n'est pas un signe prioritaire ici. B. faux : le prurit n'est pas prioritaire. C. faux : non retenu par le corrigé. D. vrai : la fièvre oriente vers une forme compliquée (infection haute). E. faux : non retenu. F. faux : non retenu. G. vrai : une douleur latéralisée au toucher vaginal évoque une salpingite. H. faux : non retenu. I. faux : non retenu.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-37","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 25 ans vient consulter au centre gratuit d’information, de dépistage et de diagnostic du VIH et des IST (Cegidd) car elle se plaint depuis quelques jours de pertes vaginales plus abondantes que d’habitude et d’aspect purulent. Elle a eu des rapports non protégés avec son nouveau partenaire.","prompt":"La patiente est apyrétique et ne présente pas de douleur pelvienne ni latéralisée au toucher vaginal. A l’examen au spéculum, le col de l’utérus est érythémateux et œdématié.\nQuel est votre diagnostic ?","section":"KFP1","qNumber":"2","sourceSegmentTitle":"KFP1","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"Cervicite / Infection du col de l’utérus / Cervico-vaginite","explanation":"Col érythémateux et œdématié, sans fièvre ni douleur pelvienne : infection limitée au col, donc cervicite.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-38","type":"qcm","choices":["A. NFS","B. CRP","C. Ionogramme et créatinine","D. Prélèvement vaginal pour analyse bactériologique","E. Prélèvement du col de l'utérus pour analyse microbiologique","F. PCR Chlamydiae trachomatis","G. PCR Neisseria gonorrhoea","H. PCR HSV2","I. Sérologie chlamydiose","J. Sérologie VIH","K. Sérologie hépatite B","L. Sérologie hépatite C","M. Sérologie hépatite A"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 25 ans vient consulter au centre gratuit d’information, de dépistage et de diagnostic du VIH et des IST (Cegidd) car elle se plaint depuis quelques jours de pertes vaginales plus abondantes que d’habitude et d’aspect purulent. Elle a eu des rapports non protégés avec son nouveau partenaire.","prompt":"Vous évoquez une cervicite. Quels sont les 6 examens complémentaires qui vous paraissent les plus pertinents ?","section":"KFP1","qNumber":"3","sourceSegmentTitle":"KFP1","localization":false,"needsImage":false,"correctAnswers":[3,4,5,6,9,10],"singleAnswer":false,"explicitNone":false,"indispensables":[9],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : bilan inflammatoire non pertinent pour une cervicite simple. B. faux : CRP non nécessaire. C. faux : pas d'indication. D. vrai : prélèvement vaginal pour bactériologie. E. vrai : prélèvement endocervical. F. vrai : PCR Chlamydia. G. vrai : PCR gonocoque. H. faux : pas de lésion herpétique. I. faux : la sérologie chlamydiose n'a pas d'intérêt diagnostique. J. vrai (indispensable) : sérologie VIH indispensable lors d'une IST. K. vrai : sérologie hépatite B. L. faux : non retenu. M. faux : non retenu.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true}]}</script>
+<script type="module">/**
+ * @param {readonly {section?: string, sourceSegmentTitle?: string, sourceTitle?: string, qNumber?: string}[]} questions
+ * @param {number} index
+ * @param {Record<number, number>} attempts
+ * @param {number|null} [justAnswered]
+ * @returns {number|undefined}
+ */
+export function unansweredDPPrerequisite(questions, index, attempts, justAnswered = null) {
+  const dossier = (question) => (question.section?.trim() ||
+    question.sourceSegmentTitle?.trim().replace(/\s+\(\d+\/\d+\)$/, "") || "")
+    .replace(/^[eé]l[eé]ment\s+d['’][eé]preuve\s*:\s*/i, "").toLowerCase().replace(/\s+/g, " ");
+  const current = questions[index];
+  if (!current) return undefined;
+  const group = dossier(current);
+  if (!/^(?:m?dp(?=\s*\d|\b)|dossier\s+(?:progressif|patient)\b)/i.test(group)) return undefined;
+  let prerequisite;
+  for (let previous = index - 1; previous >= 0; previous--) {
+    const question = questions[previous];
+    if (question.sourceTitle !== current.sourceTitle || dossier(question) !== group ||
+      /^(?:q\.?\s*)?1$/i.test(String(questions[previous + 1].qNumber ?? "").trim())) break;
+    if (previous !== justAnswered && !(attempts[previous] > 0)) prerequisite = previous;
+  }
+  return prerequisite;
+}
+
+/**
+ * Note d'une QROC. La réponse attendue liste les réponses valides du corrigé
+ * séparées par « / » ; celles qui ne valent qu'une partie des points suivent
+ * entre parenthèses : « a / b (accepté pour une partie des points : c / d) ».
+ * Une réponse vaut 1 si elle est l'une des réponses valides, 0,5 si elle est
+ * l'une des réponses partielles, 0 sinon — sans tenir compte des majuscules,
+ * des accents, des espaces ni de la ponctuation finale.
+ * @param {string | undefined} expectedText
+ * @param {string} actualText
+ * @returns {number}
+ */
+export function scoreQroc(expectedText, actualText) {
+  const normalize = (text) => String(text ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[’`]/g, "'").replace(/\s+/g, " ").trim().replace(/[\s.;:,!?]+$/, "");
+  const actual = normalize(actualText);
+  const expected = String(expectedText ?? "").trim();
+  if (!actual || !expected) return 0;
+  const split = (text) => text.split(" / ").map(normalize).filter(Boolean);
+  const partial = expected.match(/\s*\(accepté pour une partie des points\s*:\s*(.*)\)\s*$/i);
+  const main = partial ? expected.slice(0, partial.index) : expected;
+  const full = split(main);
+  // Ancien format en un bloc : « Réponse (précision) » accepte aussi « Réponse ».
+  for (const answer of [...full]) {
+    const sansPrecision = answer.replace(/\s*\([^)]*\)\s*$/, "");
+    if (sansPrecision && sansPrecision !== answer) full.push(sansPrecision);
+  }
+  if (full.includes(actual) || normalize(expected) === actual) return 1;
+  if (partial && split(partial[1]).includes(actual)) return 0.5;
+  // Petites fautes de frappe ou d'orthographe tolérées (voir `presqueEgal`).
+  if (full.some((answer) => presqueEgal(answer, actual))) return 1;
+  if (partial && split(partial[1]).some((answer) => presqueEgal(answer, actual))) return 0.5;
+  return 0;
+}
+
+/**
+ * Une réponse « presque » égale : même texte au pluriel près (« vaccinations »
+ * pour « vaccination ») et à UNE faute près — deux à partir de 14 lettres. Les
+ * réponses courtes (moins de 5 lettres) et celles qui contiennent un nombre
+ * restent exigées à l'identique : « 33 » n'est pas « 3 », « VHB » n'est pas
+ * « VIH ». Volontairement serré : « hyperkaliémie » ne passe pas pour
+ * « hypokaliémie » (deux fautes sur douze lettres).
+ * @param {string} expected déjà normalisé
+ * @param {string} actual déjà normalisé
+ */
+function presqueEgal(expected, actual) {
+  if (expected.length < 5 || /\d/.test(expected) || /\d/.test(actual)) return false;
+  const singulier = (text) => text.split(" ").map((word) => word.length > 3 ? word.replace(/[sx]$/, "") : word).join(" ");
+  const a = singulier(expected);
+  const b = singulier(actual);
+  if (a === b) return true;
+  const tolerance = a.length >= 14 ? 2 : 1;
+  if (Math.abs(a.length - b.length) > tolerance) return false;
+  // Distance d'édition (Levenshtein), arrêtée dès qu'elle dépasse la tolérance.
+  let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i += 1) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      row[j] = Math.min(previous[j] + 1, row[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      best = Math.min(best, row[j]);
+    }
+    if (best > tolerance) return false;
+    previous = row;
+  }
+  return previous[b.length] <= tolerance;
+}
+
+/**
+ * @param {{choices: readonly string[], singleAnswer?: boolean, indispensables?: number[], inacceptables?: number[]}} q
+ * @param {number[]} expected
+ * @param {number[]} actual
+ */
+export function scoreQcm(q, expected, actual) {
+  if (q.singleAnswer) {
+    if (expected.length === 0) return Number(actual.length === 0);
+    return Number(actual.length === 1 && expected.includes(actual[0]));
+  }
+  const indispensables = q.indispensables || [];
+  const inacceptables = q.inacceptables || [];
+  const hasMissedIndispensable = indispensables.some((req) => !actual.includes(req));
+  const hasSelectedInacceptable = inacceptables.some((inacc) => actual.includes(inacc));
+  if (hasMissedIndispensable || hasSelectedInacceptable) return 0;
+  const isKFP = q.choices.length > 5;
+  if (isKFP) {
+    // Règle KFP : proportionnel x/n
+    const n = expected.length;
+    if (n === 0) return actual.length === 0 ? 1 : 0;
+    const correctChecked = actual.filter((a) => expected.includes(a)).length;
+    const incorrectChecked = actual.filter((a) => !expected.includes(a)).length;
+    // On calcule (bonnes - mauvaises) / attendues pour éviter qu'un étudiant coche toutes les cases
+    const s = (correctChecked - incorrectChecked) / n;
+    return Math.max(0, Number(s.toFixed(2)));
+  }
+  // Règle DP classique (QRM à 5 choix max)
+  let incoherences = 0;
+  for (const ans of actual) if (!expected.includes(ans)) incoherences++;
+  for (const ans of expected) if (!actual.includes(ans)) incoherences++;
+  if (incoherences === 0) return 1;
+  if (incoherences === 1) return 0.5;
+  if (incoherences === 2) return 0.2;
+  return 0;
+}
+
+// Ce fichier est inséré après quizRules.js dans le document autonome.
+// Lecteur autonome d'une annale exportée : même disposition que le lecteur du
+// site — barre du haut et panneau de navigation qui restent à l'écran pendant
+// qu'on descend dans les questions.
+/* global unansweredDPPrerequisite, scoreQcm, scoreQroc */
+const { questions } = JSON.parse(document.getElementById("soschimie-annale-data").textContent);
+const main = document.getElementById("annale");
+const panel = document.getElementById("panel");
+const tools = document.getElementById("tools");
+const position = document.getElementById("position");
+const scoreBadge = document.getElementById("score");
+let attempts = {};
+let drafts = [];
+let scores = [];
+let flagged = {};
+// Vue d'ensemble : l'élève lève le verrou des dossiers progressifs pour tout parcourir.
+let overview = false;
+const hasDossier = questions.some((_, index) => unansweredDPPrerequisite(questions, index, {}) !== undefined);
+const fermee = (index) => !overview && unansweredDPPrerequisite(questions, index, attempts) !== undefined;
+// « Une à la fois » ou « Toutes » sur une page, comme dans le lecteur du site.
+let viewMode = "one";
+let current = 0;
+let finished = false;
+// Panneau : ouvert à côté sur grand écran, tiroir sur téléphone.
+const wide = window.matchMedia("(min-width: 1024px)");
+let panelOpen = wide.matches;
+// Chronomètre de séance : le temps qui coule, sans limite, avec pause.
+const stopwatch = { accumMs: 0, since: Date.now() };
+const stopwatchMs = () => stopwatch.accumMs + (stopwatch.since === null ? 0 : Date.now() - stopwatch.since);
+const gradedTotal = questions.filter((question) => question.countsForScore).length;
+
+function element(tag, content, className) {
+  const node = document.createElement(tag);
+  if (content) node.textContent = content;
+  if (className) node.className = className;
+  return node;
+}
+
+function button(label, action, className) {
+  const control = element("button", label, className);
+  control.type = "button";
+  control.addEventListener("click", action);
+  return control;
+}
+
+// Icônes au trait (mêmes formes que celles du site), dessinées en SVG inline.
+const ICONS = {
+  lock: "M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5z",
+  unlock: "M7 11V7a5 5 0 0 1 9.9-1M5 11h14v10H5z",
+  flag: "M4 22V4M4 4h13l-2 4 2 4H4",
+  pause: "M8 5v14M16 5v14",
+  play: "M7 4l13 8-13 8z",
+  grid: "M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z",
+  pin: "M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+  close: "M6 6l12 12M18 6L6 18",
+  chevron: "M9 6l6 6-6 6",
+  back: "M15 6l-6 6 6 6",
+  one: "M4 6h4M4 12h4M4 18h4M11 6h9M11 12h9M11 18h9",
+  all: "M4 5h16v6H4zM4 13h16v6H4z",
+};
+function icon(name, className) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("class", "icon" + (className ? " " + className : ""));
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", ICONS[name]);
+  svg.append(path);
+  return svg;
+}
+
+function appendImage(container, src, alt) {
+  if (!src) return;
+  const image = element("img");
+  image.src = src;
+  image.alt = alt;
+  container.append(image);
+  return image;
+}
+
+function formatStopwatch(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const mmss = String(Math.floor((total % 3600) / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
+  return h > 0 ? h + ":" + mmss : mmss;
+}
+
+const numero = (index) => questions[index].qNumber || index + 1;
+const answeredCount = () => Object.keys(attempts).length;
+const pointsTotal = () => scores.filter((score) => typeof score === "number").reduce((total, score) => total + score, 0);
+const pendingOthers = () => questions.filter((_, i) => i !== current && !attempts[i] && !fermee(i)).length;
+
+// ---------------------------------------------------------------------------
+// Barre du haut
+// ---------------------------------------------------------------------------
+
+const clock = button("", () => {
+  if (stopwatch.since === null) stopwatch.since = Date.now();
+  else { stopwatch.accumMs = stopwatchMs(); stopwatch.since = null; }
+  renderClock();
+}, "chip clock");
+const navToggle = button("", () => { panelOpen = !panelOpen; renderPanelVisibility(); }, "chip nav-toggle");
+navToggle.setAttribute("aria-controls", "panel");
+
+// Mode clair / sombre : le réglage de l'appareil la première fois, puis le
+// choix de l'élève, mémorisé dans ce navigateur (sans jamais bloquer si le
+// stockage est indisponible, par exemple un fichier ouvert en navigation privée).
+const THEME_KEY = "soschimie-annale-theme";
+let theme = (() => {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "dark" || saved === "light") return saved;
+  } catch { /* stockage indisponible */ }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+})();
+const themeToggle = button("", () => {
+  theme = theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* stockage indisponible */ }
+  renderTheme();
+}, "chip theme-toggle");
+function renderTheme() {
+  document.documentElement.dataset.theme = theme;
+  themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+  themeToggle.title = theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre";
+  themeToggle.setAttribute("aria-label", themeToggle.title);
+}
+renderTheme();
+tools.append(themeToggle, clock, navToggle);
+
+function renderClock() {
+  const paused = stopwatch.since === null;
+  clock.replaceChildren(icon(paused ? "play" : "pause"), element("span", formatStopwatch(stopwatchMs())));
+  clock.setAttribute("aria-pressed", String(paused));
+  clock.title = paused ? "Reprendre le chronomètre" : "Mettre le chronomètre en pause";
+  clock.setAttribute("aria-label", "Chronomètre " + formatStopwatch(stopwatchMs()) + (paused ? " en pause — reprendre" : " — mettre en pause"));
+}
+
+function renderTopbar() {
+  position.textContent = finished ? "Annale terminée" : "Question " + (current + 1) + " / " + questions.length;
+  scoreBadge.textContent = pointsTotal().toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " / " + gradedTotal + " pt";
+  navToggle.replaceChildren(icon("grid"), element("span", "Navigation", "label"),
+    element("span", answeredCount() + "/" + questions.length, "count"));
+  navToggle.setAttribute("aria-expanded", String(panelOpen));
+  navToggle.setAttribute("aria-label", "Navigation");
+}
+
+function renderPanelVisibility() {
+  document.body.classList.toggle("panel-open", panelOpen);
+  navToggle.setAttribute("aria-expanded", String(panelOpen));
+}
+wide.addEventListener("change", () => { panelOpen = wide.matches; renderPanelVisibility(); });
+document.querySelector(".scrim")?.addEventListener("click", () => { panelOpen = false; renderPanelVisibility(); });
+
+// ---------------------------------------------------------------------------
+// Panneau de navigation
+// ---------------------------------------------------------------------------
+
+function tone(index) {
+  if (!attempts[index]) return (drafts[index]?.selected?.length || drafts[index]?.text?.trim()) ? "draft" : "unseen";
+  const score = scores[index];
+  if (score === null || score === undefined) return "recorded";
+  return score >= 1 ? "correct" : score > 0 ? "partial" : "wrong";
+}
+
+function renderPanel() {
+  panel.replaceChildren();
+  const head = element("div", "", "panel-head");
+  const titles = element("div");
+  const flaggedCount = Object.values(flagged).filter(Boolean).length;
+  titles.append(element("h2", "Navigation"), element("p",
+    answeredCount() + " validée" + (answeredCount() >= 2 ? "s" : "") + " · " + flaggedCount + " marquée" + (flaggedCount >= 2 ? "s" : ""), "muted small"));
+  const close = button("", () => { panelOpen = false; renderPanelVisibility(); }, "icon-button");
+  close.append(icon("close"));
+  close.setAttribute("aria-label", "Masquer la navigation");
+  head.append(titles, close);
+  panel.append(head);
+
+  const bar = element("div", "", "progress");
+  const fill = element("div");
+  fill.style.width = Math.round((answeredCount() / Math.max(questions.length, 1)) * 100) + "%";
+  bar.append(fill);
+  panel.append(bar);
+
+  const scroller = element("div", "", "tiles-scroll");
+  let group = null;
+  let groupLabel;
+  questions.forEach((question, index) => {
+    const label = question.section || "";
+    if (!group || label !== groupLabel) {
+      groupLabel = label;
+      const block = element("div", "", "group");
+      if (label) block.append(element("div", label, "group-label"));
+      group = element("div", "", "tiles");
+      block.append(group);
+      scroller.append(block);
+    }
+    const locked = fermee(index);
+    const tile = button(String(numero(index)), () => { showQuestion(index); if (!wide.matches) { panelOpen = false; renderPanelVisibility(); } }, "tile " + tone(index));
+    tile.disabled = locked;
+    if (index === current && !finished) tile.setAttribute("aria-current", "true");
+    if (locked) tile.append(icon("lock", "tile-lock"));
+    if (flagged[index]) tile.append(element("span", "", "tile-flag"));
+    tile.title = locked ? "Valide les questions précédentes de ce dossier" : "Question " + numero(index);
+    tile.setAttribute("aria-label", [question.section, "Question " + numero(index)].filter(Boolean).join(" · ")
+      + (locked ? " — verrouillée" : attempts[index] ? " — validée" : " — sans réponse") + (flagged[index] ? ", marquée" : ""));
+    group.append(tile);
+  });
+  panel.append(scroller);
+
+  const legend = element("div", "", "legend");
+  [["correct", "juste"], ["partial", "partielle"], ["wrong", "à revoir"], ["recorded", "enregistrée"], ["flagged", "marquée"]]
+    .forEach(([kind, text]) => {
+      const item = element("span");
+      item.append(element("i", "", "dot " + kind), document.createTextNode(text));
+      legend.append(item);
+    });
+  panel.append(legend);
+
+  const segment = element("div", "", "segment");
+  segment.setAttribute("role", "group");
+  segment.setAttribute("aria-label", "Affichage des questions");
+  [["one", "Une à la fois"], ["all", "Toutes"]].forEach(([mode, text]) => {
+    const control = button("", () => { viewMode = mode; showQuestion(current); }, viewMode === mode ? "active" : "");
+    control.append(icon(mode), element("span", text));
+    control.setAttribute("aria-pressed", String(viewMode === mode));
+    segment.append(control);
+  });
+  panel.append(segment);
+
+  if (hasDossier) {
+    const sw = button("", () => {
+      overview = !overview;
+      if (!fermee(current)) showQuestion(current);
+      else showQuestion(questions.findLastIndex((_, i) => i <= current && !fermee(i)));
+    }, "row switch-row");
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", String(overview));
+    sw.title = "Voir toutes les questions des dossiers, même celles qui ne sont pas encore débloquées";
+    const text = element("span", "", "row-text");
+    text.append(icon(overview ? "unlock" : "lock"), element("span", "Vue d'ensemble des dossiers"));
+    sw.append(text, element("span", "", "switch" + (overview ? " on" : "")));
+    panel.append(sw);
+  }
+
+  const others = pendingOthers();
+  if (others > 0) {
+    const pending = button("", () => {
+      const next = questions.findIndex((_, i) => i > current && !attempts[i] && !fermee(i));
+      showQuestion(next !== -1 ? next : questions.findIndex((_, i) => !attempts[i] && !fermee(i)));
+    }, "row");
+    pending.append(element("span", others + " question" + (others >= 2 ? "s" : "") + " laissée" + (others >= 2 ? "s" : "") + " de côté", "row-text"), icon("chevron"));
+    panel.append(pending);
+  }
+
+  const done = answeredCount() === questions.length;
+  const finish = button("Terminer", showResult, "finish" + (done ? " ready" : ""));
+  finish.disabled = !done;
+  finish.title = done ? "Voir mon score" : "Réponds à toutes les questions pour terminer";
+  panel.append(finish);
+}
+
+// ---------------------------------------------------------------------------
+// Question
+// ---------------------------------------------------------------------------
+
+function renderLocalization(question, draft, form, locked, update) {
+  const src = question.figures.find((figure) => !figure.placement)?.inlineUrl || question.imageUrl;
+  if (!src) {
+    form.append(element("p", question.correctionFigures.length
+      ? "Le visuel annoté est disponible dans le corrigé."
+      : "Le visuel de localisation est indisponible.", "muted"));
+    return false;
+  }
+  const frame = element("div", "", "localisation");
+  const target = element(locked ? "div" : "button", "", "zone");
+  if (!locked) {
+    target.type = "button";
+    target.setAttribute("aria-label", "Placer un point sur l’image");
+    form.append(element("p", "Clique sur l’image pour placer un point. Au clavier, utilise les flèches puis Entrée.", "muted small"));
+  }
+  appendImage(target, src, "Image de localisation");
+  frame.append(target);
+  form.append(frame);
+  const cursor = { x: 0.5, y: 0.5 };
+  const draw = () => {
+    target.querySelectorAll(".point").forEach((point) => point.remove());
+    const add = ({x, y}, label, extra) => {
+      const point = element("span", label, "point" + (extra ? " cursor" : ""));
+      point.style.left = x * 100 + "%";
+      point.style.top = y * 100 + "%";
+      point.setAttribute("aria-hidden", "true");
+      target.append(point);
+    };
+    draft.points.forEach((point, index) => add(point, String(index + 1), false));
+    if (!locked) add(cursor, "+", true);
+  };
+  if (!locked) {
+    target.addEventListener("keydown", (event) => {
+      const movement = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+      if (!movement) return;
+      event.preventDefault();
+      cursor.x = Math.max(0, Math.min(1, cursor.x + movement[0] * 0.04));
+      cursor.y = Math.max(0, Math.min(1, cursor.y + movement[1] * 0.04));
+      draw();
+    });
+    target.addEventListener("click", (event) => {
+      const bounds = target.getBoundingClientRect();
+      const point = event.detail === 0 ? { ...cursor }
+        : { x: (event.clientX - bounds.left) / bounds.width, y: (event.clientY - bounds.top) / bounds.height };
+      draft.points.push(point);
+      draw();
+      update();
+    });
+    form.append(button("Retirer le dernier point", () => { draft.points.pop(); draw(); update(); }, "link"));
+  }
+  draw();
+  return true;
+}
+
+function lockedCard(index) {
+  const question = questions[index];
+  const card = element("article", "", "card locked");
+  card.id = "question-" + index;
+  const badge = element("span", "", "lock-badge");
+  badge.append(icon("lock"));
+  const text = element("div");
+  text.append(element("strong", "Question " + numero(index) + (question.section ? " · " + question.section : "")),
+    element("p", "Se débloque quand tu auras validé la question précédente du dossier.", "muted small"));
+  card.append(badge, text);
+  return card;
+}
+
+function buildCard(index, solo) {
+  const question = questions[index];
+  const draft = drafts[index] ??= { selected: [], text: "", points: [] };
+  const locked = Boolean(attempts[index]);
+  const normalized = question.normalises ?? [];
+  const graded = (indices = []) => indices.filter((value) => !normalized.includes(value));
+  const expected = graded(question.correctAnswers);
+  const isQroc = question.type === "qroc" && !question.localization;
+  const fullyNormalized = question.fullyNormalized;
+  const card = element("article", "", "card");
+  card.id = "question-" + index;
+  if (!solo && index === current) card.classList.add("current");
+
+  const top = element("div", "", "card-top");
+  const pill = element("span", "", "section-pill");
+  pill.append(icon("pin"), element("span", question.section || question.sourceTitle || "Question"));
+  const flag = button("", () => { flagged[index] = !flagged[index]; flag.classList.toggle("on", flagged[index]); flag.setAttribute("aria-pressed", String(flagged[index])); renderPanel(); }, "icon-button flag" + (flagged[index] ? " on" : ""));
+  flag.append(icon("flag"));
+  flag.setAttribute("aria-pressed", String(Boolean(flagged[index])));
+  flag.setAttribute("aria-label", "Marquer la question " + numero(index));
+  flag.title = "Marquer pour y revenir";
+  top.append(pill, flag);
+  card.append(top);
+
+  if (question.context) card.append(element("p", question.context, "context"));
+  question.figures.filter((figure) => figure.placement === "context")
+    .forEach((figure) => appendImage(card, figure.inlineUrl, "Image du dossier"));
+  const heading = element("h2", "", "prompt");
+  heading.tabIndex = -1;
+  heading.append(element("span", "Q." + numero(index), "qnum"), document.createTextNode(" " + question.prompt));
+  card.append(heading);
+  const state = element("p", "", "state " + (locked ? "done" : "todo"));
+  state.append(element("i"), document.createTextNode(locked ? "Validée" : "Sans réponse"));
+  card.append(state);
+  if (!question.localization) {
+    const figures = question.figures.filter((figure) => !figure.placement);
+    const holder = element("div", "", "figures");
+    figures.forEach((figure, i) => appendImage(holder, figure.inlineUrl, "Schéma " + (i + 1)));
+    if (!figures.length) appendImage(holder, question.imageUrl, "Schéma de la question");
+    if (holder.childElementCount) card.append(holder);
+  }
+
+  const form = element("form");
+  const submit = element("button", question.localization ? "Voir le corrigé" : "Valider", "submit");
+  submit.type = "submit";
+  let hasLocalizationImage = false;
+  const update = () => {
+    submit.disabled = question.localization ? hasLocalizationImage && draft.points.length === 0
+      : isQroc ? !draft.text.trim() : !fullyNormalized && draft.selected.length === 0;
+  };
+  if (question.localization) {
+    hasLocalizationImage = renderLocalization(question, draft, form, locked, update);
+  } else if (isQroc) {
+    const label = element("label", "", "free-answer");
+    label.append(element("span", "Ta réponse", "muted small"));
+    const input = element("input");
+    input.type = "text";
+    input.value = draft.text;
+    input.readOnly = locked;
+    if (locked) input.classList.add(tone(index));
+    input.placeholder = "Écris ta réponse";
+    input.addEventListener("input", () => { draft.text = input.value; update(); });
+    label.append(input);
+    form.append(label);
+  } else {
+    const choices = element("fieldset", "", "options");
+    choices.append(element("legend", question.singleAnswer ? "Une seule réponse" : "Une ou plusieurs réponses", "sr-only"));
+    const addChoice = (text, value, figure) => {
+      const status = locked && (normalized.includes(value) ? "neutralisée"
+        : (value === -1 ? expected.length === 0 : expected.includes(value)) ? "attendue"
+        : draft.selected.includes(value) ? "non attendue" : "");
+      const option = element("label", "", "option");
+      if (status) option.dataset.status = status;
+      const match = /^\s*([A-Z])[.)]\s+/.exec(text);
+      option.append(element("span", value === -1 ? "∅" : match ? match[1] : String.fromCharCode(65 + value), "letter"));
+      const input = element("input");
+      input.type = question.singleAnswer ? "radio" : "checkbox";
+      input.name = "response-" + index;
+      input.checked = draft.selected.includes(value);
+      input.disabled = locked;
+      input.value = String(value);
+      const box = element("span", "", "box" + (question.singleAnswer ? " round" : ""));
+      const labelText = element("span", match ? text.slice(match[0].length) : text, "option-text");
+      if (figure) appendImage(labelText, figure.inlineUrl, "Schéma de la proposition " + (value + 1));
+      if (status) labelText.append(element("small", status === "attendue" ? "✓ attendue" : status === "non attendue" ? "✗ non attendue" : status, "verdict"));
+      option.append(input, box, labelText);
+      input.addEventListener("change", () => {
+        if (question.singleAnswer || value === -1) {
+          draft.selected = input.checked ? [value] : [];
+        } else {
+          draft.selected = draft.selected.filter((choice) => choice !== -1 && choice !== value);
+          if (input.checked) draft.selected.push(value);
+        }
+        choices.querySelectorAll("input").forEach((control) => {
+          control.checked = draft.selected.includes(Number(control.value));
+        });
+        update();
+      });
+      choices.append(option);
+    };
+    question.choices.forEach((text, value) => addChoice(text, value, question.choiceFigures[value]));
+    if (!question.explicitNone && !fullyNormalized) addChoice("Aucune de ces propositions n’est exacte", -1);
+    form.append(choices);
+  }
+  if (!locked) {
+    update();
+    form.append(submit);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (submit.disabled || attempts[index]) return;
+      const actual = graded(draft.selected.filter((choice) => choice >= 0));
+      scores[index] = !question.countsForScore ? null
+        : isQroc ? scoreQroc(question.correctAnswerText, draft.text)
+        : scoreQcm({ ...question, indispensables: graded(question.indispensables), inacceptables: graded(question.inacceptables) }, expected, actual);
+      attempts[index] = 1;
+      showQuestion(index);
+      document.querySelector("#question-" + index + " .correction")?.focus();
+    });
+  }
+  card.append(form);
+  if (locked) {
+    const feedback = element("section", "", "correction");
+    feedback.tabIndex = -1;
+    feedback.append(element("h3", "Corrigé"));
+    feedback.append(element("p", scores[index] === null ? (question.localization ? "Auto-évaluation" : "Hors barème")
+      : "Points obtenus : " + String(scores[index]).replace(".", ",") + " / 1", "points " + tone(index)));
+    if ((isQroc || question.localization) && question.correctAnswerText) {
+      feedback.append(element("p", "Réponse attendue · " + question.correctAnswerText));
+    }
+    if (question.explanation) feedback.append(element("p", question.explanation));
+    question.correctionFigures.forEach((figure, i) => appendImage(feedback, figure.inlineUrl, "Schéma du corrigé " + (i + 1)));
+    card.append(feedback);
+  }
+  if (!solo) return { card, heading };
+
+  const pager = element("div", "", "pager");
+  const prev = questions.findLastIndex((_, i) => i < index && !fermee(i));
+  const back = button("", () => showQuestion(prev), "ghost");
+  back.append(icon("back"), element("span", "Précédent"));
+  back.disabled = prev === -1;
+  pager.append(back);
+  const next = questions.findIndex((_, i) => i > index && !fermee(i));
+  const right = element("div", "", "pager-right");
+  if (questions[index + 1] && fermee(index + 1)) {
+    const hint = element("span", "", "muted small lock-hint");
+    hint.append(icon("lock"), document.createTextNode(" La question " + numero(index + 1) + " se débloque quand tu valides celle-ci."));
+    right.append(hint);
+    if (next !== -1) {
+      const skip = button("", () => showQuestion(next), "ghost");
+      skip.append(element("span", "Dossier suivant"), icon("chevron"));
+      right.append(skip);
+    }
+  } else if (next !== -1) {
+    const forward = button("", () => showQuestion(next), locked ? "primary" : "ghost");
+    forward.append(element("span", locked ? "Question suivante" : "Passer"), icon("chevron"));
+    right.append(forward);
+  } else if (answeredCount() === questions.length) {
+    right.append(button("Voir mon score", showResult, "primary"));
+  }
+  pager.append(right);
+  card.append(pager);
+  return { card, heading };
+}
+
+function showQuestion(index) {
+  if (index < 0 || fermee(index)) return;
+  finished = false;
+  current = index;
+  renderTopbar();
+  renderPanel();
+  if (viewMode === "one") {
+    const { card, heading } = buildCard(index, true);
+    main.replaceChildren(card);
+    window.scrollTo({ top: 0 });
+    heading.focus({ preventScroll: true });
+    return;
+  }
+  const cards = questions.map((_, i) => (fermee(i) ? lockedCard(i) : buildCard(i, false).card));
+  main.replaceChildren(...cards);
+  const target = cards[index];
+  const top = target.getBoundingClientRect().top + window.scrollY - (document.querySelector(".topbar")?.offsetHeight ?? 0) - 16;
+  window.scrollTo({ top: Math.max(0, top) });
+}
+
+function showResult() {
+  finished = true;
+  if (stopwatch.since !== null) { stopwatch.accumMs = stopwatchMs(); stopwatch.since = null; }
+  renderClock();
+  renderTopbar();
+  renderPanel();
+  const card = element("article", "", "card result");
+  const heading = element("h2", "Annale terminée");
+  heading.tabIndex = -1;
+  card.append(heading, element("p", gradedTotal
+    ? pointsTotal().toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " / " + gradedTotal + " points"
+    : "Annale hors barème", "big"));
+  card.append(element("p", "Temps passé : " + formatStopwatch(stopwatchMs()), "muted"));
+  card.append(button("Recommencer", () => {
+    attempts = {};
+    scores = [];
+    drafts = [];
+    flagged = {};
+    stopwatch.accumMs = 0;
+    stopwatch.since = Date.now();
+    renderClock();
+    showQuestion(0);
+  }, "primary"));
+  main.replaceChildren(card);
+  window.scrollTo({ top: 0 });
+  heading.focus({ preventScroll: true });
+}
+
+renderClock();
+setInterval(renderClock, 1000);
+renderPanelVisibility();
+if (questions.length) showQuestion(0);
+else main.append(element("p", "Cette annale ne contient aucune question."));
+</script></body></html>

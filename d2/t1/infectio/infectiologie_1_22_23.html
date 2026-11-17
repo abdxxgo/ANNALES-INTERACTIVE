@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Infectiologie 1 22-23</title>
+<style>/* Lecteur autonome d'une annale exportée — calqué sur le lecteur du site :
+   fond aurore, barre du haut et panneau de navigation qui restent à l'écran. */
+:root {
+  color-scheme: light;
+  --ink: #0f1b3d;
+  --muted: #5b6785;
+  --line: rgba(15, 27, 61, .10);
+  --card: rgba(255, 255, 255, .78);
+  --navy: #0b1f4f;
+  --accent: #0ea5c6;
+  --sel: #2f5bd8;
+  --ok: #16a34a;
+  --part: #f59e0b;
+  --bad: #dc2626;
+  --rec: #2563eb;
+  --top: 76px;
+  --surface: rgba(255, 255, 255, .76);
+  --surface-2: rgba(255, 255, 255, .7);
+  --edge: rgba(255, 255, 255, .85);
+  --solid: #ffffff;
+  --tint: rgba(15, 27, 61, .07);
+  --line-strong: rgba(15, 27, 61, .15);
+  --box-line: #3b4664;
+  --switch-off: #d4d9e4;
+  --ok-ink: #11713a; --part-ink: #8a5a00; --bad-ink: #a11d1d; --rec-ink: #1d4ed8;
+  --part-bg: #fff4dc;
+  --aurora: radial-gradient(60rem 30rem at 0% 0%, rgba(110, 231, 196, .55), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 0%, rgba(125, 211, 252, .55), transparent 60%),
+    radial-gradient(60rem 40rem at 40% 60%, rgba(196, 181, 253, .45), transparent 65%),
+    radial-gradient(50rem 40rem at 100% 100%, rgba(165, 243, 252, .5), transparent 60%),
+    #eef6fb;
+  font: 15px/1.55 "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-padding-top: calc(var(--top) + 24px); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--aurora);
+  background-attachment: fixed;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.icon { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 3px solid rgba(47, 91, 216, .45); outline-offset: 2px; }
+
+/* --- Barre du haut, collée en haut de l'écran --- */
+.topbar {
+  position: sticky; top: 12px; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  width: min(100% - 24px, 1180px); margin: 12px auto 0; padding: .8rem 1rem .8rem 1.25rem;
+  border: 1px solid var(--edge); border-radius: 22px;
+  background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(15, 27, 61, .18);
+}
+.titles { min-width: 0; }
+.topbar h1 { margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { display: flex; align-items: center; gap: .6rem; margin: .2rem 0 0; color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.pill { white-space: nowrap; padding: .1rem .55rem; border-radius: 999px; background: var(--tint); color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tools { display: flex; align-items: center; gap: .5rem; flex: none; }
+.chip {
+  display: inline-flex; align-items: center; gap: .45rem; height: 38px; padding: 0 .85rem;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2);
+  font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  box-shadow: 0 4px 12px -8px rgba(15, 27, 61, .3); transition: transform .12s, background-color .12s;
+}
+.chip:active { transform: scale(.96); }
+.clock[aria-pressed="true"] { border-color: rgba(245, 158, 11, .55); background: var(--part-bg); color: var(--part-ink); }
+.nav-toggle { border-color: rgba(47, 91, 216, .45); background: rgba(47, 91, 216, .08); color: var(--sel); }
+.nav-toggle .count {
+  display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 .4rem; border-radius: 999px;
+  background: linear-gradient(135deg, #22c4c4, #0ea5c6); color: white; font-size: .72rem; font-weight: 800;
+}
+
+/* --- Mise en page : questions à gauche, navigation à droite --- */
+.layout { width: min(100% - 24px, 1180px); margin: 18px auto 40px; }
+@media (min-width: 1024px) {
+  body.panel-open .layout { display: grid; grid-template-columns: minmax(0, 1fr) 16.5rem; gap: 20px; align-items: start; }
+  #panel { position: sticky; top: calc(var(--top) + 24px); max-height: calc(100vh - var(--top) - 40px); overflow: auto; }
+  body:not(.panel-open) #panel { display: none; }
+  .scrim { display: none; }
+}
+@media (max-width: 1023.98px) {
+  #panel {
+    position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: min(88vw, 20rem); overflow: auto;
+    border-radius: 24px 0 0 24px; transform: translateX(105%); transition: transform .25s ease;
+  }
+  body.panel-open #panel { transform: none; }
+  .scrim { position: fixed; inset: 0; z-index: 30; background: rgba(15, 27, 61, .25); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  body.panel-open .scrim { opacity: 1; pointer-events: auto; }
+  .nav-toggle .label { display: none; }
+}
+
+/* --- Panneau de navigation --- */
+#panel {
+  padding: 14px; border: 1px solid var(--edge); border-radius: 24px;
+  background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(15, 27, 61, .18);
+}
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.panel-head h2 { margin: 0; font-size: .92rem; font-weight: 800; }
+.panel-head p { margin: .1rem 0 0; }
+.icon-button {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--muted);
+}
+.icon-button:hover { color: var(--ink); }
+.progress { height: 5px; margin: .75rem 0; border-radius: 999px; background: var(--tint); overflow: hidden; }
+.progress div { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6d8cf5, #22c4c4); transition: width .3s; }
+.tiles-scroll { max-height: 16rem; overflow: auto; padding-right: 4px; }
+.group + .group { margin-top: .6rem; }
+.group-label { margin-bottom: .3rem; font-size: .72rem; font-weight: 800; color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.tile {
+  position: relative; height: 36px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface-2); color: var(--muted); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  transition: transform .12s;
+}
+.tile:not(:disabled):hover { transform: translateY(-1px); }
+.tile:disabled { opacity: .5; }
+.tile[aria-current] { border: 2px solid var(--navy); color: var(--ink); box-shadow: 0 0 0 3px rgba(11, 31, 79, .12); }
+.tile.correct { border-color: rgba(22, 163, 74, .45); background: rgba(22, 163, 74, .14); color: var(--ok-ink); }
+.tile.partial { border-color: rgba(245, 158, 11, .5); background: rgba(245, 158, 11, .15); color: var(--part-ink); }
+.tile.wrong { border-color: rgba(220, 38, 38, .45); background: rgba(220, 38, 38, .12); color: var(--bad-ink); }
+.tile.recorded { border-color: rgba(37, 99, 235, .45); background: rgba(37, 99, 235, .12); color: var(--rec-ink); }
+.tile.draft::after { content: ""; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--sel); box-shadow: 0 0 0 2px white; }
+.tile-lock { position: absolute; top: -5px; right: -5px; width: 13px; height: 13px; padding: 1px; border-radius: 50%; background: var(--solid); color: var(--muted); }
+.tile-flag { position: absolute; top: -4px; left: -4px; width: 11px; height: 11px; border-radius: 3px; background: var(--part); box-shadow: 0 0 0 2px white; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 55%, 0 70%); }
+.legend { display: flex; flex-wrap: wrap; gap: .25rem .7rem; margin-top: .7rem; font-size: .72rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.correct { background: var(--ok); } .dot.partial { background: var(--part); } .dot.wrong { background: var(--bad); }
+.dot.recorded { background: var(--rec); } .dot.flagged { background: var(--part); border-radius: 2px; }
+.segment { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-top: .8rem; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); }
+.segment button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: .8rem; font-weight: 700; }
+.segment button.active { background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+.row {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 40px; margin-top: .55rem;
+  padding: .45rem .8rem; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2);
+  color: var(--ink); font-size: .8rem; font-weight: 600; text-align: left;
+}
+.row-text { display: inline-flex; align-items: center; gap: .45rem; }
+.switch { position: relative; width: 34px; height: 20px; flex: none; border-radius: 999px; background: var(--switch-off); transition: background-color .15s; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--solid); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: left .15s; }
+.switch.on { background: var(--sel); }
+.switch.on::after { left: 16px; }
+.finish { width: 100%; height: 42px; margin-top: .7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--muted); font-weight: 700; }
+.finish.ready { border: 0; background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+
+/* --- Carte de question --- */
+main#annale { min-width: 0; }
+main#annale > * + * { margin-top: 16px; }
+.card {
+  padding: clamp(18px, 3.2vw, 30px); border: 1px solid var(--edge); border-radius: 26px;
+  background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 14px 34px -16px rgba(15, 27, 61, .2);
+}
+.card.current { box-shadow: 0 0 0 2px rgba(47, 91, 216, .35), 0 14px 34px -16px rgba(15, 27, 61, .2); }
+.card.locked { display: flex; align-items: center; gap: .9rem; padding: 16px 20px; background: var(--surface-2); }
+.card.locked p { margin: .1rem 0 0; }
+.lock-badge { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--tint); color: var(--muted); }
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+.section-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .7rem; border-radius: 999px; background: var(--tint); font-size: .78rem; font-weight: 700; }
+.section-pill .icon { color: #e11d48; }
+.flag { border: 0; background: none; width: 34px; height: 34px; border-radius: 50%; }
+.flag.on { background: rgba(245, 158, 11, .15); color: var(--part-ink); }
+.flag.on .icon { fill: currentColor; }
+.context { margin: 0 0 1rem; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.prompt { margin: 0; font-size: clamp(1.05rem, 2.3vw, 1.2rem); font-weight: 750; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qnum { color: var(--accent); font-weight: 800; }
+.prompt:focus, .correction:focus, .result h2:focus { outline: none; }
+.state { display: flex; align-items: center; gap: .4rem; margin: .45rem 0 1.1rem; font-size: .8rem; color: var(--muted); }
+.state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.state.done { color: var(--rec); }
+.figures img, .correction img { display: block; max-width: 100%; max-height: 22rem; height: auto; margin: .5rem auto; border-radius: 14px; border: 1px solid var(--line); background: var(--solid); }
+fieldset.options { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.option {
+  position: relative; display: flex; align-items: center; gap: .9rem; margin: 0 0 12px; padding: .95rem 1rem;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--surface-2); cursor: pointer;
+  transition: border-color .12s, background-color .12s;
+}
+.option:hover { border-color: rgba(47, 91, 216, .35); }
+.option input { position: absolute; opacity: 0; pointer-events: none; }
+.letter { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border: 1px solid var(--line); border-radius: 8px; background: var(--solid); font-size: .74rem; font-weight: 800; color: var(--muted); }
+.box { width: 22px; height: 22px; flex: none; border: 1.5px solid var(--box-line); border-radius: 6px; background: var(--solid); }
+.box.round { border-radius: 50%; }
+.option input:checked ~ .box { border-color: var(--sel); background: var(--sel); box-shadow: inset 0 0 0 3px white; }
+.option:has(input:checked) { border-color: rgba(47, 91, 216, .55); background: rgba(47, 91, 216, .07); }
+.option:has(input:focus-visible) { outline: 3px solid rgba(47, 91, 216, .45); outline-offset: 2px; }
+.option-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-weight: 500; }
+.option-text img { display: block; max-width: 100%; max-height: 18rem; margin-top: .5rem; border-radius: 10px; }
+.option[data-status="attendue"] { border-color: rgba(22, 163, 74, .5); background: rgba(22, 163, 74, .09); }
+.option[data-status="non attendue"] { border-color: rgba(220, 38, 38, .45); background: rgba(220, 38, 38, .07); }
+.option[data-status="neutralisée"] { background: var(--tint); }
+.verdict { display: block; margin-top: .2rem; font-weight: 700; font-size: .75rem; }
+[data-status="attendue"] .verdict { color: var(--ok-ink); } [data-status="non attendue"] .verdict { color: var(--bad-ink); }
+.free-answer { display: grid; gap: .4rem; margin-bottom: 1rem; }
+.free-answer input { width: 100%; height: 48px; padding: 0 1rem; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--solid); font: inherit; color: inherit; }
+.free-answer input.correct { border: 2px solid var(--ok); background: rgba(22, 163, 74, .08); color: var(--ok-ink); }
+.free-answer input.partial { border: 2px solid var(--part); background: rgba(245, 158, 11, .1); color: var(--part-ink); }
+.free-answer input.wrong { border: 2px solid var(--bad); background: rgba(220, 38, 38, .07); color: var(--bad-ink); }
+.submit {
+  width: 100%; height: 52px; margin-top: .4rem; border: 0; border-radius: 999px;
+  background: linear-gradient(90deg, #3f5fb5, #2fb9c6); color: white; font-weight: 800; font-size: 1rem;
+  box-shadow: 0 10px 24px -12px rgba(47, 91, 216, .6); transition: transform .12s, opacity .12s;
+}
+.submit:disabled { opacity: .55; box-shadow: none; }
+.submit:not(:disabled):active { transform: scale(.99); }
+.correction { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid rgba(47, 91, 216, .2); border-radius: 18px; background: rgba(47, 91, 216, .05); }
+.correction h3 { margin: 0 0 .3rem; font-size: .95rem; }
+.correction p { margin: .4rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.points { font-weight: 800; }
+.points.correct { color: var(--ok-ink); } .points.partial { color: var(--part-ink); } .points.wrong { color: var(--bad-ink); }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; margin-top: 1.2rem; }
+.pager-right { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .6rem; }
+.ghost, .primary {
+  display: inline-flex; align-items: center; gap: .35rem; height: 42px; padding: 0 1.1rem; border-radius: 999px; font-weight: 700; font-size: .88rem;
+}
+.ghost { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.ghost:disabled { opacity: .45; }
+.primary { border: 0; background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+.lock-hint { display: inline-flex; align-items: center; gap: .3rem; }
+.link { margin: .2rem 0 .6rem; border: 0; background: none; color: var(--sel); font-weight: 600; padding: 0; }
+.result { text-align: center; }
+.result h2 { margin: 0; font-size: 1.4rem; }
+.big { font-size: 2rem; font-weight: 800; margin: .6rem 0; }
+.result .primary { margin-top: .6rem; }
+.localisation { margin: .7rem 0; }
+.zone { display: inline-block; position: relative; padding: 0; border: 0; max-width: 100%; background: none; }
+button.zone { cursor: crosshair; }
+.zone img { display: block; max-width: 100%; margin: 0; border-radius: 12px; }
+.point { position: absolute; transform: translate(-50%, -50%); min-width: 1.6rem; border: 2px solid white; border-radius: 50%; background: var(--sel); color: white; text-align: center; pointer-events: none; }
+.point.cursor { visibility: hidden; }
+.zone:focus-visible .point.cursor { visibility: visible; }
+
+/* --- Mode sombre : réglage de l'appareil par défaut, bouton ☀️/🌙 pour choisir --- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e8edf8; --muted: #9aa6c3; --line: rgba(255, 255, 255, .10); --line-strong: rgba(255, 255, 255, .18);
+  --card: rgba(22, 26, 48, .78); --surface: rgba(22, 26, 48, .78); --surface-2: rgba(255, 255, 255, .05);
+  --edge: rgba(255, 255, 255, .08); --solid: #1b2140; --tint: rgba(255, 255, 255, .08);
+  --navy: #3b5bdb; --accent: #5ccfe6; --sel: #7c9cff; --box-line: #8b97b8; --switch-off: #3a4363;
+  --ok-ink: #6ee7a0; --part-ink: #fbbf5c; --bad-ink: #ff8a8a; --rec-ink: #93b4ff; --part-bg: rgba(245, 158, 11, .16);
+  --aurora: radial-gradient(60rem 30rem at 10% 0%, rgba(56, 40, 120, .55), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 10%, rgba(20, 90, 120, .45), transparent 60%),
+    radial-gradient(60rem 40rem at 40% 70%, rgba(90, 30, 110, .40), transparent 65%),
+    #0b0f22;
+}
+:root[data-theme="dark"] .figures img, :root[data-theme="dark"] .correction img, :root[data-theme="dark"] .option-text img { background: #ffffff; }
+.theme-toggle { width: 38px; justify-content: center; padding: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style></head><body>
+<header class="topbar"><div class="titles"><h1>Infectiologie 1 22-23</h1><p class="sub"><span id="position" aria-live="polite"></span><span id="score" class="pill"></span></p></div><div class="tools" id="tools"></div></header>
+<div class="layout"><main id="annale"></main><aside id="panel" aria-label="Navigation de l'examen"></aside></div>
+<div class="scrim" aria-hidden="true"></div>
+<noscript>Active JavaScript pour répondre aux questions de cette annale.</noscript>
+<script type="application/json" id="soschimie-annale-data">{"title":"Infectiologie 1 22-23","questions":[{"id":"q-1","type":"qcm","choices":["A. Vous réalisez le test de diagnostic rapide Streptotest® chez Madame A.","B. Vous réalisez le test de diagnostic rapide Streptotest® chez tous les patients avec une angine érythémato-pultacée, quel que soit leur âge","C. Vous ne réalisez jamais le test de diagnostic rapide Streptotest® chez les adultes","D. Le test de diagnostic rapide Streptotest® a une valeur prédictive négative proche de 100%","E. Le test de diagnostic rapide Streptotest® permet la détection d'antigènes présents à la surface du Staphylocoque doré (Staphylococcus aureus)"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Madame A., 25 ans, se présente à votre consultation pour une angine évoluant depuis 72h. Elle est fébrile (38.5°C). A l’examen clinique, les amygdales sont augmentées de volume, recouvertes de points blancs. Vous notez également des adénopathies cervicales bilatérales. Vous disposez au cabinet du test rapide Streptotest®. Parmi les propositions suivantes, laquelle ou lesquelles est(sont) exacte(s) ?","section":"QI (20)","qNumber":"1","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : le TDR est indiqué chez l'adulte symptomatique (score de Mac Isaac élevé). B. faux : il n'est pas fait quel que soit l'âge (indiqué selon l'âge et les signes). C. faux : il est utile chez l'adulte selon le score. D. vrai : la VPN est proche de 100%. E. faux : il détecte l'antigène du streptocoque A.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-2","type":"qcm","choices":["A. la persistance de la fièvre pendant plus de 24h","B. la persistance de l'obstruction nasale pendant plus de 10 jours","C. la persistance des douleurs sinusiennes malgré un traitement symptomatique d'au moins 48h","D. le caractère unilatéral de la douleur","E. le caractère pulsatile de la douleur, et/ou sa majoration au réveil"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Monsieur M. avait consulté son médecin traitant il y a 5 jours pour une rhinopharyngite, associée à de la fièvre et des douleurs maxillaires bilatérales à la pression. Le médecin avait prescrit un traitement symptomatique (paracétamol et solution de lavage nasal). Il consulte de nouveau pour persistance de la fièvre et aggravation des douleurs faciales. Parmi les éléments suivants, lequel(lesquels) est(sont) en faveur d’une sinusite maxillaire bactérienne ?","section":"QI (20)","qNumber":"2","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : non retenu comme critère. B. vrai : la persistance au-delà de 10 jours évoque une origine bactérienne. C. vrai : l'échec du traitement symptomatique à 48h est un critère. D. vrai : le caractère unilatéral est un critère. E. faux : selon le corrigé officiel (imprimé Faux).","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-3","type":"qcm","choices":["A. le sarcopte se transmet directement par contact cutané, peau contre peau","B. la gale peut être une affection nosocomiale","C. la gale n'est pas sexuellement transmissible","D. le sarcopte se transmet indirectement par l'intermédiaire de tissus contaminés","E. la gale est responsable d'épidémies dans les établissements pour personnes âgées"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes concernant la gale, quelles sont les réponses vraies ?","section":"QI (20)","qNumber":"3","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : La transmission est directe. B. vrai : Elle peut l’être. C. faux : Elle est considérée comme une maladie sexuellement transmissible. D. vrai : C’est un mode de contamination possible. E. vrai : Elle donne des épidémies dans ces établissements.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-4","type":"qcm","choices":["A. les poux de tête sont des insectes hématophages","B. la parasitose due à Pthirus pubis n'est pas une infection sexuellement transmissible","C. les poux de corps peuvent survivre plusieurs jours sur des vêtements","D. les poux de corps pondent leurs œufs sur les poils du corps","E. les repas sanguins des poux sont responsables de prurit du cuir chevelu"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes sur les poux, quelles sont les réponses vraies ?","section":"QI (20)","qNumber":"4","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : Ce sont des insectes qui piquent la peau pour se nourrir de sang. B. faux : C’est une infection transmissible sexuellement. C. vrai : Ils peuvent rester jusqu’à 2-3 jours sans se nourrir dans les vêtements. D. faux : Ils pondent leurs œufs sur les vêtements. E. vrai : Les repas de sang sont responsables du prurit.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-5","type":"qcm","choices":["A. il y a un peu plus de 200 millions de cas de paludisme par an dans le monde","B. Plasmodium knowlesi est une espèce infectant fréquemment l'homme","C. l'accès palustre à Plasmodium falciparum est une urgence diagnostique et thérapeutique","D. Plasmodium vivax et Plasmodium ovale forment des hypnozoïtes dans le foie","E. les trophozoïtes font partie de la phase sexuée du cycle"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi ces propositions sur le paludisme, laquelle ou lesquelles sont vraies ?","section":"QI (20)","qNumber":"5","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : 240 millions de cas dans le monde en 2020. B. faux : De rares cas ont été rapportés. C. vrai : En raison de la possible rapide évolution de l’accès. D. vrai : Ils sont responsables d’accès de reviviscence. E. faux : Ils font partie de la phase asexuée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-6","type":"qcm","choices":["A. la contamination se fait en marchant pieds nus sur la plage","B. le cycle d'auto-infestation est perpétué à vie","C. Strongyloides stercoralis ne se transmet pas en zone tropicale","D. la transmission est assurée par la piqûre d'un moustique","E. Strongyloides stercoralis est un cestode"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi ces propositions sur l'anguillulose, quelle est la réponse vraie ?","section":"QI (20)","qNumber":"6","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[1],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[0,1,2,3,4],"correctAnswerText":"","explanation":"A. neutralisé : Faux, elle se fait en marchant dans la boue. B. neutralisé : Vrai, la réinfestation est permanente. C. neutralisé : Faux, elle se transmet beaucoup en zone tropicale. D. neutralisé : Faux, elle n’est pas vectorielle et se fait par passage transcutané de larves. E. neutralisé : Faux, c’est un nématode.","correctionSource":"officielle","fullyNormalized":true,"countsForScore":false},{"id":"q-7","type":"qcm","choices":["A. la contamination s'effectue au cours d'un bain en eau de mer","B. le parasite est retrouvé dans la majorité des cas en Afrique","C. l'hôte intermédiaire est un mollusque","D. le miracidium passe par la voie transcutanée pour infecter l'homme","E. les œufs sont éliminés dans les selles"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi ces propositions sur la bilharziose à Schistosoma haematobium, quelles sont les réponses vraies ?","section":"QI (20)","qNumber":"7","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[0,1,2,3,4],"correctAnswerText":"","explanation":"A. neutralisé : Faux, elle se fait au cours d’un bain en eau douce. B. neutralisé : Vrai, pour 85% des cas de bilharziose urogénitale. C. neutralisé : Vrai, et l’hôte définitif est l’homme. D. neutralisé : Faux, c’est la furcocercaire qui passe la barrière cutanée. E. neutralisé : Faux, dans les urines.","correctionSource":"officielle","fullyNormalized":true,"countsForScore":false},{"id":"q-8","type":"qcm","choices":["A. Staphylococcus aureus est probablement la bactérie en cause","B. Il s'agit probablement d'une contamination des flacons d'hémoculture","C. Vous décidez d'arrêter l'antibiothérapie","D. Escherichia coli est probablement la bactérie en cause","E. Vous attendez que tous les flacons soient positifs pour traiter"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Une femme âgée de 42 ans se présente aux urgences à 8h00 pour fièvre et douleurs lombaires. Quatre flacons d’hémoculture sont prélevés et un traitement antibiotique est instauré. Le biologiste du laboratoire de bactériologie vous informe à 18h00 que trois flacons d’hémoculture sont positifs à bacille à Gram négatif. Laquelle de ces réponse est vrai :","section":"QI (20)","qNumber":"8","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : c'est un cocci Gram positif. B. faux : 3 flacons sur 4 positifs. C. faux : pyélonéphrite à traiter. D. vrai : BGN avec point d'appel urinaire. E. faux : on ne diffère pas le traitement.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-9","type":"qcm","choices":["A. L'antibiothérapie est orientée par l'examen direct des hémocultures détectées positives par l'automate","B. La réalisation des hémocultures nécessite des mesures d'asepsie rigoureuse","C. Un prélèvement d'hémoculture nécessite l'ensemencement d'un flacon aérobie et d'un flacon anaérobie","D. Les hémocultures doivent être prélevées après antibiothérapie","E. Staphylococcus aureus est retrouvé dans 30% des bactériémies communautaires"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Concernant les bactériémies, quelle est ou quelles sont la ou les bonnes réponses ?","section":"QI (20)","qNumber":"9","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,1,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : le Gram oriente le traitement. B. vrai : pour éviter les contaminations. C. vrai : paire aérobie/anaérobie. D. faux : avant antibiothérapie. E. vrai : selon le corrigé.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-10","type":"qcm","choices":["A. Idéalement, chaque flacon doit contenir 10 ml de sang","B. Un examen direct sera réalisé dès l'arrivée des flacons au laboratoire","C. Il faut prévenir le laboratoire que vous suspectez une endocardite","D. Si un seul flacon sur six revient positif à Corynebacterium amycolatum, vous concluez à une probable contamination","E. Streptococcus agalactiae (streptocoque B) est fréquemment l'agent causal à cet âge"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Vous décidez d’hospitaliser un patient de 60 ans pour suspicion d’endocardite. Des hémocultures sont envoyées au laboratoire. Laquelle (lesquelles) de ces réponses est (sont) exacte(s) :","section":"QI (20)","qNumber":"10","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[0,1,2,3,4],"correctAnswerText":"","explanation":"A. neutralisé : item neutralisé, il ne compte pas dans la note. B. neutralisé : item neutralisé, il ne compte pas dans la note. C. neutralisé : item neutralisé, il ne compte pas dans la note. D. neutralisé : item neutralisé, il ne compte pas dans la note. E. neutralisé : item neutralisé, il ne compte pas dans la note.","correctionSource":"officielle","fullyNormalized":true,"countsForScore":false},{"id":"q-11","type":"qcm","choices":["A. Pneumopathie acquise sous ventilation mécanique","B. Infection urinaire sur sonde","C. Infection liée au cathéter","D. Infection de site opératoire (ISO)","E. Légionellose nosocomiale"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Quelle est l’infection associée aux soins la plus fréquente ?","section":"QI (20)","qNumber":"11","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[1],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : moins fréquente. B. vrai : première IAS. C. faux. D. faux. E. faux : rare.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-12","type":"qcm","choices":["A. Bactérie environnementale présente sur la sonde avant la pose","B. Contamination endogène à partir du microbiote digestif","C. Contamination lors de la pose de la sonde","D. Contamination endogène par voie sanguine","E. Perforation vésicale"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Lors d’une infection urinaire sur sonde, parmi les modes de contamination suivant lequel (lesquels) est(sont) le plus plausible ?","section":"QI (20)","qNumber":"12","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : sonde stérile. B. vrai : flore digestive. C. vrai : à la pose. D. faux : rare. E. faux : pas un mode de contamination.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-13","type":"qcm","choices":["A. Diabète","B. Personne âgée de plus de 75 ans","C. Femme enceinte","D. Personne porteuse d'entérobactérie productrice de Béta-lactamase à spectre étendu","E. Personne porteuse d'une sonde vésicale à demeure"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les facteurs suivants, lequel ou lesquels est (sont) des facteurs d'infection urinaire à risque de complication ?","section":"QI (20)","qNumber":"13","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : selon le corrigé. B. vrai : âge >75 ans. C. vrai : grossesse. D. faux : selon le corrigé. E. faux : selon le corrigé.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-14","type":"qcm","choices":["A. Escherichia coli K1","B. Neisseria meningitidis","C. Streptococcus pyogenes","D. Listeria monocytogenes","E. Staphylococcus aureus"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les espèces bactériennes suivantes, lesquelles sont des bactéries responsables de méningites chez la personne âgée ?","section":"QI (20)","qNumber":"14","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : méningite néonatale. B. vrai. C. faux. D. vrai : terrain âgé. E. faux.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-15","type":"qcm","choices":["A. Numération des lymphocytes T CD4+","B. Charge virale VIH (PCR ARN VIH) dans le LCR","C. Charge virale VIH (PCR ARN VIH) dans le sperme","D. Charge virale VIH (PCR ARN VIH) dans le sang","E. Génotypage de résistance pré-thérapeutique"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Le bilan biologique initial d'une découverte de séropositivité VIH comprend :","section":"QI (20)","qNumber":"15","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : évalue l'immunodépression. B. faux : non systématique. C. faux. D. vrai : charge virale plasmatique. E. vrai : avant traitement.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-16","type":"qcm","choices":["A. Lymphome non hodgkinien","B. Cancer du canal anal","C. Cancer du col de l'utérus","D. Cancer de la vessie","E. Sarcome de Kaposi"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Dans l'infection par le VIH, quels sont les cancers classant SIDA parmi la liste ci-dessous ?","section":"QI (20)","qNumber":"16","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : lymphome classant. B. faux : selon le corrigé. C. vrai : cancer invasif du col classant. D. faux. E. vrai : sarcome de Kaposi classant.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-17","type":"qcm","choices":["A. Grippe","B. Pneumocystose","C. SARS-COV-2","D. Pneumopathie à CMV","E. Toxoplasmose pulmonaire"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Un patient de 32 ans vivant avec le VIH, traité efficacement depuis 9 ans avec une charge virale \u003c50 copies/ml et une numération TCD4+ à 577/mm3 à sa dernière consultation d'octobre 2022, se présente au SAU avec une fièvre à 38,7°C, une toux et des expectorations sales. Vous recherchez :","section":"QI (20)","qNumber":"17","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : infection courante. B. faux : CD4 élevés. C. vrai. D. faux : opportuniste. E. faux : opportuniste.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-18","type":"qcm","choices":["A. Diphtérie (Corynebacterium diphtheriae)","B. Coqueluche (Bordetella pertussis)","C. Legionellose (Legionella pneumophila)","D. Méningite à Méningocoque (Neisseria meningitidis)","E. Tuberculose (Mycobacterium tuberculosis)"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les infections bactériennes suivantes, indiquez celle(s) pouvant être prévenue(s) par un vaccin :","section":"QI (20)","qNumber":"18","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : vaccin DTP. B. vrai : vaccin coqueluche. C. faux : pas de vaccin. D. vrai : vaccin méningocoque. E. vrai : BCG.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-19","type":"qcm","choices":["A. La grippe maligne primaire est caractérisée par une pneumopathie alvéolo-interstitielle hypoxémiante évoluant rapidement vers un syndrome de détresse respiratoire aigu","B. Les surinfections bactériennes pulmonaires surviennent en moyenne 5 à 7 jours après les premiers signes cliniques","C. Staphylococcus aureus et Streptococcus pneumoniae sont les 2 bactéries les plus fréquemment incriminées dans les surinfections bactériennes pulmonaires","D. On observe une surmortalité chez les patients obèses","E. En cas de grippe chez une femme enceinte, le risque de prématurité est majoré"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Concernant les complications redoutées de la grippe, quelle(s) proposition(s) est(sont) exacte(s) ?","section":"QI (20)","qNumber":"19","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : SDRA rapide. B. vrai : surinfection à 5-7 jours. C. vrai : pneumocoque et staphylocoque. D. vrai : obésité facteur de gravité. E. vrai : prématurité majorée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-20","type":"qcm","choices":["A. La prescription d'un arrêt de travail pour les patients ambulatoires","B. La prescription de précautions complémentaires « air » pour les patients hospitalisés","C. Le port systématique du masque FFP2 pour les soignants exerçant à l'hôpital","D. L'hygiène régulière des mains avec un soluté hydro-alcoolique","E. La prescription d'un traitement post-exposition en cas de cluster survenant au sein d'un établissement hébergeant des personnes âgées"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Dans le contrôle des épidémies saisonnières de grippe, les modalités de prévention sont basées sur (plusieurs réponses possibles) :","section":"QI (20)","qNumber":"20","sourceSegmentTitle":"QI (20)","localization":false,"needsImage":false,"correctAnswers":[0,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : limite la transmission. B. faux : précautions gouttelettes. C. faux : masque chirurgical, FFP2 non systématique. D. vrai : hygiène des mains. E. vrai : prophylaxie en cas de cluster.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-21","type":"qcm","choices":["A. Fièvre ayant débuté le 1er jour de l'hospitalisation","B. Patient porteur d'une sonde urinaire","C. Antécédent d'HTA","D. Antécédent de lombarthrose","E. Patient ayant eu des troubles de la conscience entre le début de l'hospitalisation et le début du tableau fébrile"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Parmi les étiologies de ce syndrome fébrile il faut évoquer par principe une infection associée aux soins. Quel(s) serai(en)t le(s) argument(s) en faveur de cette hypothèse ?","section":"DP1 (15)","qNumber":"1","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[1,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : une fièvre dès le 1er jour (moins de 48 h) évoque une infection présente à l'admission. B. vrai : la sonde urinaire est un dispositif invasif, facteur d'infection associée aux soins. C. faux : l'HTA n'est pas un facteur d'infection. D. faux : la lombarthrose n'est pas liée aux soins. E. vrai : selon le corrigé officiel (troubles de la conscience, facteur de risque d'infection associée aux soins).","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-22","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Lors de l’examen vous constatez qu’il existe un trajet inflammatoire douloureux en regard du cathéter veineux périphérique posé il y a 5 jours dès l’admission du patient. L’orifice de ponction est purulent. Il n’y a pas d’autre anomalie de l’examen clinique. Quel diagnostic ce tableau vous évoque t’il ?","section":"DP1 (15)","qNumber":"2","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"Veinite / Lymphangite / Infection sur cathéter / Infection cutanée sur cathéter","explanation":"Un trajet inflammatoire douloureux avec point de ponction purulent sur un cathéter posé depuis 5 jours évoque une veinite, soit une infection du cathéter.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-23","type":"qcm","choices":["A. Abstention thérapeutique (souillure probable)","B. Traitement antibiotique uniquement après résultat de l'antibiogramme","C. Traitement antibiotique probabiliste par voie veineuse","D. Verrou d'antibiotique sur le cathéter à l'origine de l'infection","E. Retrait du cathéter à l'origine de l'infection"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Devant cette veinite associée à de la fièvre et des frissons, vous réalisez une hémoculture. Vous êtes appelé(e) par le laboratoire de bactériologie le lendemain : la première hémoculture est positive en 8 heures. Quelle est votre prise en soin thérapeutique initiale ?","section":"DP1 (15)","qNumber":"3","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[4],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : une hémoculture positive en 8 h dans ce contexte n'est pas une souillure. B. faux : il ne faut pas attendre l'antibiogramme. C. vrai : l'antibiothérapie probabiliste IV est urgente. D. faux : le verrou est inadapté ici, le cathéter doit être retiré. E. vrai (indispensable) : indispensable : retrait du cathéter source.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-24","type":"qcm","choices":["A. Candida albicans","B. Pneumocoque","C. Escherichia coli","D. Staphylocoque doré","E. Streptocoque du groupe A"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Quel micro-organisme est le plus probable dans ce contexte ?","section":"DP1 (15)","qNumber":"4","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : Candida est moins fréquent. B. faux : le pneumocoque n'est pas lié aux cathéters. C. faux : E. coli est surtout urinaire/digestif. D. vrai : S. aureus, flore cutanée, est le premier agent des infections de cathéter. E. faux : peu fréquent sur cathéter.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-25","type":"qcm","choices":["A. Changement du cathéter toutes les 72 heures","B. Asepsie cutanée avant la pose du cathéter","C. Antibiothérapie systématique lors de la pose du cathéter","D. Pansement stérile occlusif et transparent","E. pas de pose systématique de cathéter veineux"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Le laboratoire identifie un Staphylococcus aureus. Une deuxième hémoculture est positive à cet agent infectieux. Une infection nosocomiale sur cathéter apparait comme l'hypothèse la plus probable. Parmi les éléments préventifs suivants quel est celui qui aurait eu le plus d’impact pour éviter cette complication s’il avait été respecté ? Quel moyen de prévention parmi ceux proposés aurait eu le plus d'effet pour éviter cette infection nosocomiale ?","section":"DP1 (15)","qNumber":"5","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[4],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : le changement systématique n'est pas recommandé. B. faux : utile mais moins efficace que l'absence de pose. C. faux : l'antibioprophylaxie n'est pas indiquée. D. faux : utile mais moindre impact. E. vrai : un cathéter non posé ne peut s'infecter : pas de pose systématique, ici sans indication.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-26","type":"qcm","choices":["A. Testing musculaire","B. Recherche d'un trouble de la sensibilité épicritique","C. Recherche d'une hépatomégalie","D. Recherche d'un signe de la sonnette","E. Recherche d'adénomégalies superficielles"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Le patient sort 2 jours plus tard avec une antibiothérapie per os contrairement à ce que l'infectiologue avait préconisé (sortie contre avis médical et refus du patient de soins à domicile). Le patient est revu 6 semaines plus tard. Lors de cette consultation, il a l'air fatigué. Il vous parle de son lumbago qui est revenu il y a 2 à 3 semaines et s’est installé en 2 à 3 jours et d'un torticolis qui le gêne vraiment depuis 1 semaine. Malgré l’automédication contre la douleur, il a toujours « mal aux reins », surtout le matin. Il se plaint par ailleurs d’une fatigue importante. Il vous dit avoir mesuré sa température à plusieurs reprises autour de 38° C. Parmi les gestes de recherche sémiologique suivants quel est celui qui vous parait le plus pertinent pour approfondir la compréhension de ce tableau clinique?","section":"DP1 (15)","qNumber":"6","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : pas de déficit moteur décrit. B. faux : pas de trouble sensitif décrit. C. faux : non orienté. D. vrai : la douleur rachidienne fébrile après bactériémie à S. aureus évoque une spondylodiscite, dont la percussion épineuse (sonnette) est un signe. E. faux : peu contributif.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-27","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Le signe de la sonnette est positif au niveau de la charnière dorso-lombaire. Dans ce contexte quelle hypothèse diagnostique devez vous évoquer systématiquement ?","section":"DP1 (15)","qNumber":"7","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"spondylodiscite / spondylite / infection vertébrale","explanation":"Douleur rachidienne fébrile avec sonnette positive après bactériémie à S. aureus : spondylodiscite infectieuse à évoquer systématiquement.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-28","type":"qcm","choices":["A. une radiographie du rachis dorso-lombaire","B. une IRM cérébrale","C. un scanner centré sur le rachis lombo sacré","D. une IRM pan-rachidienne","E. une scintigraphie osseuse"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Quel examen d'imagerie à réaliser rapidement est le plus approprié dans ce contexte ?","section":"DP1 (15)","qNumber":"8","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : peu sensible et tardive. B. faux : hors zone. C. faux : moins sensible et zone limitée. D. vrai : l'IRM de tout le rachis est l'examen de référence, avec recherche de foyers étagés et d'atteinte épidurale. E. faux : moins précise.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-29","type":"qcm","choices":["A. spondylodiscite affectant 2 vertèbres","B. compression médullaire","C. épidurite","D. recul du mur postérieur"],"figures":[{"figureId":"q-29-sujet-0","nodeId":"","inlineUrl":"data:image/jpeg;base64,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","width":755,"height":320,"bytes":29178}],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Voici l'imagerie IRM (n'est montré ici que la partie basse de l'IRM rachidienne). Quel(s) signe(s) radiologique(s) observez vous ?","section":"DP1 (15)","qNumber":"9","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":true,"correctAnswers":[0],"singleAnswer":false,"explicitNone":false,"indispensables":[0],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai (indispensable) : indispensable : atteinte discale et de deux vertèbres adjacentes. B. faux : sur la partie basse montrée. C. faux : selon le corrigé officiel. D. faux : pas de recul du mur postérieur.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-30","type":"qroc","choices":[],"figures":[{"figureId":"q-30-sujet-0","nodeId":"","inlineUrl":"data:image/jpeg;base64,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","width":755,"height":341,"bytes":26501}],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"La partie \"haute\" de l'IRM montre des lésions plus inquiétantes. Le patient est asymptomatique au plan neurologique mais à l’examen neurologique vous retrouvez un signe du réflexe cutané plantaire (Signe de Babinski) positif. Quelle complication neurologique grave redoutez-vous en priorité ?","section":"DP1 (15)","qNumber":"10","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":true,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"compression médullaire","explanation":"Un signe de Babinski traduit une atteinte pyramidale. Avec des lésions rachidiennes hautes à l'IRM, on redoute une compression médullaire, urgence neurochirurgicale.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-31","type":"qcm","choices":["A. Recherche d'un portage nasal de Staphylococcus aureus","B. Echographie cardiaque par voie-transthoracique","C. coloscopie","D. Consultation ORL","E. Consultation dentaire"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Le patient a été opéré. Les prélèvements per-opératoires sont positifs à Staphylococcus aureus dont l'antibiogramme est identique à celui retrouvé lors de la bactériémie du mois précédent. Quel bilan complémentaire est nécessaire chez ce patient ?","section":"DP1 (15)","qNumber":"11","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[1],"singleAnswer":false,"explicitNone":false,"indispensables":[1],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : la porte d'entrée est déjà connue (cathéter). B. vrai (indispensable) : indispensable : rechercher une endocardite après bactériémie à S. aureus avec localisation secondaire. C. faux : sans lien. D. faux : sans lien. E. faux : S. aureus n'est pas d'origine dentaire.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-32","type":"qcm","choices":["A. oui","B. non"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Vous apprenez que l’auto traitement de la douleur de ce que le patient pensait être un lombago était des AINS (anti inflammatoire non stéroidien). Cette prise d’AINS a-t-elle pu faciliter le développement de la spondylodiscite ?","section":"DP1 (15)","qNumber":"12","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[0],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : les AINS masquent la douleur et la fièvre et retardent le diagnostic, et peuvent altérer la réponse immunitaire. B. faux.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-33","type":"qcm","choices":["A. Spondylodiscite bactérienne avec compression médullaire","B. Spondylodiscite bactériémique","C. Infection de cathéter nosocomiale avec spondylodiscite secondaire grave","D. Infection associée au soin bactériémique","E. compression médullaire non traumatique"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Un homme de 75 ans est hospitalisé pour bilan et rééquilibration d'une hypertension artérielle mal contrôlée depuis plusieurs années. Il souffre d’un retard mental modéré et ancien qui est la seule justification à l’hospitalisation. Il n’y a en effet pas de situation médicale aiguë chez ce patient par ailleurs autonome. Il présente comme principaux autres antécédents une obésité morbide avec un IMC à 31 kg/m² et une lombarthrose avec plusieurs épisodes de lumbago. Il est employé de bureau en retraite et vit en couple. En cours d’hospitalisation, il présente une fièvre à 39°C avec quelques frissons. La tolérance hémodynamique est bonne.","prompt":"Finalement quelle proposition vous parait décrire de façon la plus précise l’histoire clinique de ce patient ?","section":"DP1 (15)","qNumber":"13","sourceSegmentTitle":"DP1 (15)","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : omet l'origine nosocomiale. B. faux : incomplet. C. vrai : il décrit la porte d'entrée (cathéter, nosocomiale) et la complication secondaire grave. D. faux : omet la spondylodiscite. E. faux : réducteur.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-34","type":"qcm","choices":["A. Confusion","B. Hypotension artérielle systolique \u003c 100 mmHg","C. Syndrome méningé","D. Tachypnée avec fréquence respiratoire > 22 / minutes","E. Anurie"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Quels signes de gravité recherchez-vous immédiatement pour calculer le score quickSOFA ?","section":"DP2 (13)","qNumber":"1","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[0,1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[1],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : trouble de conscience, critère qSOFA. B. vrai (indispensable) : PAS ≤ 100 mmHg, critère qSOFA (indispensable). C. faux : hors qSOFA. D. vrai : FR ≥ 22/min, critère qSOFA. E. faux : hors qSOFA.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-35","type":"qcm","choices":["A. Bandelette urinaire","B. ECBU","C. NFS","D. Gaz du sang avec lactates","E. Aucun"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Votre examen est dans les limites de la normale en dehors d’une douleur à la palpation lombaire droite. Même si la patiente est fatiguée, il n'y a aucun signe de gravité. Quel(s) examens complémentaires prescrivez-vous ?","section":"DP2 (13)","qNumber":"2","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[1],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : orientation diagnostique rapide. B. vrai (indispensable) : indispensable, documente la bactérie et l'antibiogramme. C. vrai : recherche d'un syndrome inflammatoire. D. faux : pas de signe de gravité. E. faux : des examens sont nécessaires.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-36","type":"qcm","choices":["A. Antibiothérapie probabiliste par amoxicilline + ac clavulanique per os","B. Antibiothérapie probabiliste par ceftriaxone IV","C. Hospitalisation en urgence","D. Explications à la patiente que l’absence de signes de gravité justifie l’absence de traitement spécifique","E. Explications à la patiente que l’absence de signes de gravité permet son retour à domicile sous réserve de reconsulter dans 48-72 heures"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"La bandelette urinaire retrouve une leucocyturie significative et des nitrites, et l’absence d’hématurie. La NFS retrouve une hyperleucocytose à polynucléraires neutrophiles, une CRP à 120 UI/mL et une créatinine à 67 micromoles/ml. Quelle est votre attitude thérapeutique immédiate ?","section":"DP2 (13)","qNumber":"3","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[1,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : la pyélonéphrite nécessite une C3G, l'amoxicilline-clavulanate n'est pas adapté en probabiliste. B. vrai : ceftriaxone adaptée à la pyélonéphrite. C. faux : pas de gravité. D. faux : un traitement est nécessaire. E. vrai : retour à domicile avec surveillance.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-37","type":"qcm","choices":["A. Dysménorrhées","B. Fibromes","C. Grossesse","D. Anomalie de l’arbre urinaire","E. Immunodépression"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Quels facteurs de risque de complication d’infection urinaire recherchez-vous à l’interrogatoire ?","section":"DP2 (13)","qNumber":"4","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[2,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : pas un facteur de risque. B. faux : non retenu. C. vrai : facteur de risque de complication. D. vrai : favorise la complication. E. vrai : terrain à risque.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-38","type":"qcm","choices":["A. Rien de plus, cela ne change pas le traitement","B. La réalisation d’un dosage des béta HCG","C. La réalisation d’une échographie pelvienne","D. Vous hospitalisez la patiente","E. Vous modifiez votre antibiothérapie"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"La patiente vous dit avoir un retard de règles de deux semaines. Elle n’a pas d’autres antécédents. Que lui proposez- vous ?","section":"DP2 (13)","qNumber":"5","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[1],"singleAnswer":false,"explicitNone":false,"indispensables":[1],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : une grossesse change la prise en charge. B. vrai (indispensable) : indispensable, confirme ou exclut la grossesse. C. faux : non indiquée d'emblée. D. faux : pas justifiée. E. faux : à décider après le résultat.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-39","type":"qcm","choices":["A. En l'absence de grossesse","B. En l'absence d'allergie aux fluoroquinolones","C. Si la patiente était porteuse de sondes JJ","D. En l'absence de prise de fluoroquinolones dans les 6 derniers mois","E. En l'absence de facteurs de risque de complication"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Sous quelles conditions auriez-vous pu prescrire une fluoroquinolone en probabiliste avant le résultat de l’antibiogramme ?","section":"DP2 (13)","qNumber":"6","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : contre-indiquée pendant la grossesse. B. vrai : allergie = contre-indication. C. faux : sonde JJ = facteur de complication, à éviter. D. vrai : exposition récente = risque de résistance. E. vrai : réservée aux formes simples.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-40","type":"qcm","choices":["A. Poursuite de l’antibiothérapie à l’identique","B. Relais oral par C3G orale","C. Relais oral par amoxicilline","D. Prescription d’un bilan biologique de contrôle","E. Prescription d’un ECBU de contrôle"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Vous revoyez la patiente 48 heures plus tard en consultation post urgence. La patiente est apyrétique. Les béta HCG sont négatifs. L’ECBU retrouve une leucocyturie à 10⁵/mL et la présence d’un Escherichia coli à 10⁴/mL avec un antibiogramme multisensible. Quelle est votre conduite à tenir ?","section":"DP2 (13)","qNumber":"7","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":false,"explicitNone":false,"indispensables":[2],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : on désescalade. B. faux : C3G orale non souhaitable. C. vrai (indispensable) : indispensable, germe sensible, spectre étroit. D. faux : non nécessaire. E. faux : pas de contrôle systématique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-41","type":"qcm","choices":["A. Un dépistage de l’infection par le VIH.","B. Un dépistage du Chlamydiae par PCR","C. Un dépistage du Chlamydiae par sérologie","D. Un dépistage de l’herpès par sérologie","E. Vous lui prescrivez un traitement post exposition du VIH (antiviral)","F. Un dépistage de l’hépatite B"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Alors que vous en profitez pour faire un point sur le suivi gynécologique de la patiente et abordez la sexualité, la patiente vous confie avoir eu des rapports non protégés avec un partenaire occasionnel 10 jours auparavant. Elle a eu 3 partenaires au cours des 12 derniers mois et a utilisé de manière inconstante le préservatif. Que lui proposez-vous ?","section":"DP2 (13)","qNumber":"8","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[0,1,5],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : dépistage IST. B. vrai : PCR de référence. C. faux : sérologie non adaptée. D. faux : non recommandé. E. faux : TPE au-delà de 48 h non indiqué. F. vrai : dépistage VHB.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-42","type":"qcm","choices":["A. Une primo-infection par le VIH","B. Un chancre mou","C. Une syphilis primaire","D. Une infection à Chlamydiae","E. Un herpès génital"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"La patiente vous parle également de « boutons en bas » et de douleurs depuis quelques jours. A l’examen clinique vous retrouvez des ulcérations des petites et des grandes lèvres douloureuses. Il n’y a pas d’écoulement vaginal. Quel est le diagnostic le plus probable ?","section":"DP2 (13)","qNumber":"9","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[4],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : pas d'ulcération typique. B. faux : rare. C. faux : chancre indolore. D. faux : pas d'ulcération. E. vrai : ulcérations multiples douloureuses.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-43","type":"qcm","choices":["A. La réalisation d’une PCR herpès sur une lésion","B. Eviter les rapports sexuels tant que persistent les symptômes","C. Une abstention thérapeutique","D. Un traitement par valaciclovir par voie orale","E. Un traitement par aciclovir par voie intraveineuse"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Quelle conduite à tenir lui proposez-vous ?","section":"DP2 (13)","qNumber":"10","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : selon le corrigé : non nécessaire en cas de tableau typique. B. vrai : évite la transmission. C. faux : traitement indiqué. D. vrai : traitement oral. E. faux : IV réservé aux formes graves.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-44","type":"qcm","choices":["A. Contrôle de la sérologie VIH à 6 semaines","B. Une abstention thérapeutique","C. Traitement par ceftriaxone IM en dose unique","D. Traitement par doxycycline pendant 7 jours","E. Vaccination contre l’hépatite B"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Vous revoyez la patiente avec les résultats des examens. Les ulcérations génitales sont en cours de cicatrisation et ne sont plus douloureuses. La sérologie VIH est négative. L’antigène HBs est négatif, les anticorps antiHBs sont négatifs, les anticorps antiHBc sont négatifs. La sérologie syphilis est négative. La PCR Chlamydiae trachomatis vaginale est positive. La PCR gonocoque vaginale est négative. Quelle est votre conduite à tenir ?","section":"DP2 (13)","qNumber":"11","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[0,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : contrôle à 6 semaines. B. faux : Chlamydia à traiter. C. faux : gonocoque négatif. D. vrai : traitement du Chlamydia. E. vrai : patiente non immunisée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-45","type":"qcm","choices":["A. Rapports sexuels protégés","B. Dépistage des IST chez les partenaires","C. Information sur les différents modes de contraception","D. Éviter les baisers","E. Arrêt de travail"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Vous avez réalisé la première injection du vaccin contre l’hépatite B.Quelles autres mesures de prévention préconisez- vous ?","section":"DP2 (13)","qNumber":"12","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : préservatif. B. vrai : traiter les partenaires. C. vrai : prévention. D. faux : inutile. E. faux : non justifié.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-46","type":"qcm","choices":["A. Une seule dose suffit","B. Rappel à 1 mois et à 6 mois","C. Rappel à 2 mois et à 8 mois","D. Rappel unique à 6 mois","E. Rappel unique à 1 an"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences, une femme de 29 ans, sans antécédent, qui se présente pour fièvre et lombalgies. A l’interrogatoire, elle signale l’apparition brutale d’une fièvre à 39°C depuis 3 jours, avec asthénie, myalgies, brûlures urinaires et douleur lombaire droite.","prompt":"Comment poursuivez-vous le schéma de vaccination contre l’hépatite B ?","section":"DP2 (13)","qNumber":"13","sourceSegmentTitle":"DP2 (13)","localization":false,"needsImage":false,"correctAnswers":[1],"singleAnswer":false,"explicitNone":false,"indispensables":[1],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : schéma à 3 doses. B. vrai (indispensable) : indispensable, schéma 0-1-6 mois. C. faux : intervalles incorrects. D. faux : manque la dose à 1 mois. E. faux : schéma incorrect.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true}]}</script>
+<script type="module">/**
+ * @param {readonly {section?: string, sourceSegmentTitle?: string, sourceTitle?: string, qNumber?: string}[]} questions
+ * @param {number} index
+ * @param {Record<number, number>} attempts
+ * @param {number|null} [justAnswered]
+ * @returns {number|undefined}
+ */
+export function unansweredDPPrerequisite(questions, index, attempts, justAnswered = null) {
+  const dossier = (question) => (question.section?.trim() ||
+    question.sourceSegmentTitle?.trim().replace(/\s+\(\d+\/\d+\)$/, "") || "")
+    .replace(/^[eé]l[eé]ment\s+d['’][eé]preuve\s*:\s*/i, "").toLowerCase().replace(/\s+/g, " ");
+  const current = questions[index];
+  if (!current) return undefined;
+  const group = dossier(current);
+  if (!/^(?:m?dp(?=\s*\d|\b)|dossier\s+(?:progressif|patient)\b)/i.test(group)) return undefined;
+  let prerequisite;
+  for (let previous = index - 1; previous >= 0; previous--) {
+    const question = questions[previous];
+    if (question.sourceTitle !== current.sourceTitle || dossier(question) !== group ||
+      /^(?:q\.?\s*)?1$/i.test(String(questions[previous + 1].qNumber ?? "").trim())) break;
+    if (previous !== justAnswered && !(attempts[previous] > 0)) prerequisite = previous;
+  }
+  return prerequisite;
+}
+
+/**
+ * Note d'une QROC. La réponse attendue liste les réponses valides du corrigé
+ * séparées par « / » ; celles qui ne valent qu'une partie des points suivent
+ * entre parenthèses : « a / b (accepté pour une partie des points : c / d) ».
+ * Une réponse vaut 1 si elle est l'une des réponses valides, 0,5 si elle est
+ * l'une des réponses partielles, 0 sinon — sans tenir compte des majuscules,
+ * des accents, des espaces ni de la ponctuation finale.
+ * @param {string | undefined} expectedText
+ * @param {string} actualText
+ * @returns {number}
+ */
+export function scoreQroc(expectedText, actualText) {
+  const normalize = (text) => String(text ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[’`]/g, "'").replace(/\s+/g, " ").trim().replace(/[\s.;:,!?]+$/, "");
+  const actual = normalize(actualText);
+  const expected = String(expectedText ?? "").trim();
+  if (!actual || !expected) return 0;
+  const split = (text) => text.split(" / ").map(normalize).filter(Boolean);
+  const partial = expected.match(/\s*\(accepté pour une partie des points\s*:\s*(.*)\)\s*$/i);
+  const main = partial ? expected.slice(0, partial.index) : expected;
+  const full = split(main);
+  // Ancien format en un bloc : « Réponse (précision) » accepte aussi « Réponse ».
+  for (const answer of [...full]) {
+    const sansPrecision = answer.replace(/\s*\([^)]*\)\s*$/, "");
+    if (sansPrecision && sansPrecision !== answer) full.push(sansPrecision);
+  }
+  if (full.includes(actual) || normalize(expected) === actual) return 1;
+  if (partial && split(partial[1]).includes(actual)) return 0.5;
+  // Petites fautes de frappe ou d'orthographe tolérées (voir `presqueEgal`).
+  if (full.some((answer) => presqueEgal(answer, actual))) return 1;
+  if (partial && split(partial[1]).some((answer) => presqueEgal(answer, actual))) return 0.5;
+  return 0;
+}
+
+/**
+ * Une réponse « presque » égale : même texte au pluriel près (« vaccinations »
+ * pour « vaccination ») et à UNE faute près — deux à partir de 14 lettres. Les
+ * réponses courtes (moins de 5 lettres) et celles qui contiennent un nombre
+ * restent exigées à l'identique : « 33 » n'est pas « 3 », « VHB » n'est pas
+ * « VIH ». Volontairement serré : « hyperkaliémie » ne passe pas pour
+ * « hypokaliémie » (deux fautes sur douze lettres).
+ * @param {string} expected déjà normalisé
+ * @param {string} actual déjà normalisé
+ */
+function presqueEgal(expected, actual) {
+  if (expected.length < 5 || /\d/.test(expected) || /\d/.test(actual)) return false;
+  const singulier = (text) => text.split(" ").map((word) => word.length > 3 ? word.replace(/[sx]$/, "") : word).join(" ");
+  const a = singulier(expected);
+  const b = singulier(actual);
+  if (a === b) return true;
+  const tolerance = a.length >= 14 ? 2 : 1;
+  if (Math.abs(a.length - b.length) > tolerance) return false;
+  // Distance d'édition (Levenshtein), arrêtée dès qu'elle dépasse la tolérance.
+  let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i += 1) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      row[j] = Math.min(previous[j] + 1, row[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      best = Math.min(best, row[j]);
+    }
+    if (best > tolerance) return false;
+    previous = row;
+  }
+  return previous[b.length] <= tolerance;
+}
+
+/**
+ * @param {{choices: readonly string[], singleAnswer?: boolean, indispensables?: number[], inacceptables?: number[]}} q
+ * @param {number[]} expected
+ * @param {number[]} actual
+ */
+export function scoreQcm(q, expected, actual) {
+  if (q.singleAnswer) {
+    if (expected.length === 0) return Number(actual.length === 0);
+    return Number(actual.length === 1 && expected.includes(actual[0]));
+  }
+  const indispensables = q.indispensables || [];
+  const inacceptables = q.inacceptables || [];
+  const hasMissedIndispensable = indispensables.some((req) => !actual.includes(req));
+  const hasSelectedInacceptable = inacceptables.some((inacc) => actual.includes(inacc));
+  if (hasMissedIndispensable || hasSelectedInacceptable) return 0;
+  const isKFP = q.choices.length > 5;
+  if (isKFP) {
+    // Règle KFP : proportionnel x/n
+    const n = expected.length;
+    if (n === 0) return actual.length === 0 ? 1 : 0;
+    const correctChecked = actual.filter((a) => expected.includes(a)).length;
+    const incorrectChecked = actual.filter((a) => !expected.includes(a)).length;
+    // On calcule (bonnes - mauvaises) / attendues pour éviter qu'un étudiant coche toutes les cases
+    const s = (correctChecked - incorrectChecked) / n;
+    return Math.max(0, Number(s.toFixed(2)));
+  }
+  // Règle DP classique (QRM à 5 choix max)
+  let incoherences = 0;
+  for (const ans of actual) if (!expected.includes(ans)) incoherences++;
+  for (const ans of expected) if (!actual.includes(ans)) incoherences++;
+  if (incoherences === 0) return 1;
+  if (incoherences === 1) return 0.5;
+  if (incoherences === 2) return 0.2;
+  return 0;
+}
+
+// Ce fichier est inséré après quizRules.js dans le document autonome.
+// Lecteur autonome d'une annale exportée : même disposition que le lecteur du
+// site — barre du haut et panneau de navigation qui restent à l'écran pendant
+// qu'on descend dans les questions.
+/* global unansweredDPPrerequisite, scoreQcm, scoreQroc */
+const { questions } = JSON.parse(document.getElementById("soschimie-annale-data").textContent);
+const main = document.getElementById("annale");
+const panel = document.getElementById("panel");
+const tools = document.getElementById("tools");
+const position = document.getElementById("position");
+const scoreBadge = document.getElementById("score");
+let attempts = {};
+let drafts = [];
+let scores = [];
+let flagged = {};
+// Vue d'ensemble : l'élève lève le verrou des dossiers progressifs pour tout parcourir.
+let overview = false;
+const hasDossier = questions.some((_, index) => unansweredDPPrerequisite(questions, index, {}) !== undefined);
+const fermee = (index) => !overview && unansweredDPPrerequisite(questions, index, attempts) !== undefined;
+// « Une à la fois » ou « Toutes » sur une page, comme dans le lecteur du site.
+let viewMode = "one";
+let current = 0;
+let finished = false;
+// Panneau : ouvert à côté sur grand écran, tiroir sur téléphone.
+const wide = window.matchMedia("(min-width: 1024px)");
+let panelOpen = wide.matches;
+// Chronomètre de séance : le temps qui coule, sans limite, avec pause.
+const stopwatch = { accumMs: 0, since: Date.now() };
+const stopwatchMs = () => stopwatch.accumMs + (stopwatch.since === null ? 0 : Date.now() - stopwatch.since);
+const gradedTotal = questions.filter((question) => question.countsForScore).length;
+
+function element(tag, content, className) {
+  const node = document.createElement(tag);
+  if (content) node.textContent = content;
+  if (className) node.className = className;
+  return node;
+}
+
+function button(label, action, className) {
+  const control = element("button", label, className);
+  control.type = "button";
+  control.addEventListener("click", action);
+  return control;
+}
+
+// Icônes au trait (mêmes formes que celles du site), dessinées en SVG inline.
+const ICONS = {
+  lock: "M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5z",
+  unlock: "M7 11V7a5 5 0 0 1 9.9-1M5 11h14v10H5z",
+  flag: "M4 22V4M4 4h13l-2 4 2 4H4",
+  pause: "M8 5v14M16 5v14",
+  play: "M7 4l13 8-13 8z",
+  grid: "M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z",
+  pin: "M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+  close: "M6 6l12 12M18 6L6 18",
+  chevron: "M9 6l6 6-6 6",
+  back: "M15 6l-6 6 6 6",
+  one: "M4 6h4M4 12h4M4 18h4M11 6h9M11 12h9M11 18h9",
+  all: "M4 5h16v6H4zM4 13h16v6H4z",
+};
+function icon(name, className) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("class", "icon" + (className ? " " + className : ""));
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", ICONS[name]);
+  svg.append(path);
+  return svg;
+}
+
+function appendImage(container, src, alt) {
+  if (!src) return;
+  const image = element("img");
+  image.src = src;
+  image.alt = alt;
+  container.append(image);
+  return image;
+}
+
+function formatStopwatch(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const mmss = String(Math.floor((total % 3600) / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
+  return h > 0 ? h + ":" + mmss : mmss;
+}
+
+const numero = (index) => questions[index].qNumber || index + 1;
+const answeredCount = () => Object.keys(attempts).length;
+const pointsTotal = () => scores.filter((score) => typeof score === "number").reduce((total, score) => total + score, 0);
+const pendingOthers = () => questions.filter((_, i) => i !== current && !attempts[i] && !fermee(i)).length;
+
+// ---------------------------------------------------------------------------
+// Barre du haut
+// ---------------------------------------------------------------------------
+
+const clock = button("", () => {
+  if (stopwatch.since === null) stopwatch.since = Date.now();
+  else { stopwatch.accumMs = stopwatchMs(); stopwatch.since = null; }
+  renderClock();
+}, "chip clock");
+const navToggle = button("", () => { panelOpen = !panelOpen; renderPanelVisibility(); }, "chip nav-toggle");
+navToggle.setAttribute("aria-controls", "panel");
+
+// Mode clair / sombre : le réglage de l'appareil la première fois, puis le
+// choix de l'élève, mémorisé dans ce navigateur (sans jamais bloquer si le
+// stockage est indisponible, par exemple un fichier ouvert en navigation privée).
+const THEME_KEY = "soschimie-annale-theme";
+let theme = (() => {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "dark" || saved === "light") return saved;
+  } catch { /* stockage indisponible */ }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+})();
+const themeToggle = button("", () => {
+  theme = theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* stockage indisponible */ }
+  renderTheme();
+}, "chip theme-toggle");
+function renderTheme() {
+  document.documentElement.dataset.theme = theme;
+  themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+  themeToggle.title = theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre";
+  themeToggle.setAttribute("aria-label", themeToggle.title);
+}
+renderTheme();
+tools.append(themeToggle, clock, navToggle);
+
+function renderClock() {
+  const paused = stopwatch.since === null;
+  clock.replaceChildren(icon(paused ? "play" : "pause"), element("span", formatStopwatch(stopwatchMs())));
+  clock.setAttribute("aria-pressed", String(paused));
+  clock.title = paused ? "Reprendre le chronomètre" : "Mettre le chronomètre en pause";
+  clock.setAttribute("aria-label", "Chronomètre " + formatStopwatch(stopwatchMs()) + (paused ? " en pause — reprendre" : " — mettre en pause"));
+}
+
+function renderTopbar() {
+  position.textContent = finished ? "Annale terminée" : "Question " + (current + 1) + " / " + questions.length;
+  scoreBadge.textContent = pointsTotal().toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " / " + gradedTotal + " pt";
+  navToggle.replaceChildren(icon("grid"), element("span", "Navigation", "label"),
+    element("span", answeredCount() + "/" + questions.length, "count"));
+  navToggle.setAttribute("aria-expanded", String(panelOpen));
+  navToggle.setAttribute("aria-label", "Navigation");
+}
+
+function renderPanelVisibility() {
+  document.body.classList.toggle("panel-open", panelOpen);
+  navToggle.setAttribute("aria-expanded", String(panelOpen));
+}
+wide.addEventListener("change", () => { panelOpen = wide.matches; renderPanelVisibility(); });
+document.querySelector(".scrim")?.addEventListener("click", () => { panelOpen = false; renderPanelVisibility(); });
+
+// ---------------------------------------------------------------------------
+// Panneau de navigation
+// ---------------------------------------------------------------------------
+
+function tone(index) {
+  if (!attempts[index]) return (drafts[index]?.selected?.length || drafts[index]?.text?.trim()) ? "draft" : "unseen";
+  const score = scores[index];
+  if (score === null || score === undefined) return "recorded";
+  return score >= 1 ? "correct" : score > 0 ? "partial" : "wrong";
+}
+
+function renderPanel() {
+  panel.replaceChildren();
+  const head = element("div", "", "panel-head");
+  const titles = element("div");
+  const flaggedCount = Object.values(flagged).filter(Boolean).length;
+  titles.append(element("h2", "Navigation"), element("p",
+    answeredCount() + " validée" + (answeredCount() >= 2 ? "s" : "") + " · " + flaggedCount + " marquée" + (flaggedCount >= 2 ? "s" : ""), "muted small"));
+  const close = button("", () => { panelOpen = false; renderPanelVisibility(); }, "icon-button");
+  close.append(icon("close"));
+  close.setAttribute("aria-label", "Masquer la navigation");
+  head.append(titles, close);
+  panel.append(head);
+
+  const bar = element("div", "", "progress");
+  const fill = element("div");
+  fill.style.width = Math.round((answeredCount() / Math.max(questions.length, 1)) * 100) + "%";
+  bar.append(fill);
+  panel.append(bar);
+
+  const scroller = element("div", "", "tiles-scroll");
+  let group = null;
+  let groupLabel;
+  questions.forEach((question, index) => {
+    const label = question.section || "";
+    if (!group || label !== groupLabel) {
+      groupLabel = label;
+      const block = element("div", "", "group");
+      if (label) block.append(element("div", label, "group-label"));
+      group = element("div", "", "tiles");
+      block.append(group);
+      scroller.append(block);
+    }
+    const locked = fermee(index);
+    const tile = button(String(numero(index)), () => { showQuestion(index); if (!wide.matches) { panelOpen = false; renderPanelVisibility(); } }, "tile " + tone(index));
+    tile.disabled = locked;
+    if (index === current && !finished) tile.setAttribute("aria-current", "true");
+    if (locked) tile.append(icon("lock", "tile-lock"));
+    if (flagged[index]) tile.append(element("span", "", "tile-flag"));
+    tile.title = locked ? "Valide les questions précédentes de ce dossier" : "Question " + numero(index);
+    tile.setAttribute("aria-label", [question.section, "Question " + numero(index)].filter(Boolean).join(" · ")
+      + (locked ? " — verrouillée" : attempts[index] ? " — validée" : " — sans réponse") + (flagged[index] ? ", marquée" : ""));
+    group.append(tile);
+  });
+  panel.append(scroller);
+
+  const legend = element("div", "", "legend");
+  [["correct", "juste"], ["partial", "partielle"], ["wrong", "à revoir"], ["recorded", "enregistrée"], ["flagged", "marquée"]]
+    .forEach(([kind, text]) => {
+      const item = element("span");
+      item.append(element("i", "", "dot " + kind), document.createTextNode(text));
+      legend.append(item);
+    });
+  panel.append(legend);
+
+  const segment = element("div", "", "segment");
+  segment.setAttribute("role", "group");
+  segment.setAttribute("aria-label", "Affichage des questions");
+  [["one", "Une à la fois"], ["all", "Toutes"]].forEach(([mode, text]) => {
+    const control = button("", () => { viewMode = mode; showQuestion(current); }, viewMode === mode ? "active" : "");
+    control.append(icon(mode), element("span", text));
+    control.setAttribute("aria-pressed", String(viewMode === mode));
+    segment.append(control);
+  });
+  panel.append(segment);
+
+  if (hasDossier) {
+    const sw = button("", () => {
+      overview = !overview;
+      if (!fermee(current)) showQuestion(current);
+      else showQuestion(questions.findLastIndex((_, i) => i <= current && !fermee(i)));
+    }, "row switch-row");
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", String(overview));
+    sw.title = "Voir toutes les questions des dossiers, même celles qui ne sont pas encore débloquées";
+    const text = element("span", "", "row-text");
+    text.append(icon(overview ? "unlock" : "lock"), element("span", "Vue d'ensemble des dossiers"));
+    sw.append(text, element("span", "", "switch" + (overview ? " on" : "")));
+    panel.append(sw);
+  }
+
+  const others = pendingOthers();
+  if (others > 0) {
+    const pending = button("", () => {
+      const next = questions.findIndex((_, i) => i > current && !attempts[i] && !fermee(i));
+      showQuestion(next !== -1 ? next : questions.findIndex((_, i) => !attempts[i] && !fermee(i)));
+    }, "row");
+    pending.append(element("span", others + " question" + (others >= 2 ? "s" : "") + " laissée" + (others >= 2 ? "s" : "") + " de côté", "row-text"), icon("chevron"));
+    panel.append(pending);
+  }
+
+  const done = answeredCount() === questions.length;
+  const finish = button("Terminer", showResult, "finish" + (done ? " ready" : ""));
+  finish.disabled = !done;
+  finish.title = done ? "Voir mon score" : "Réponds à toutes les questions pour terminer";
+  panel.append(finish);
+}
+
+// ---------------------------------------------------------------------------
+// Question
+// ---------------------------------------------------------------------------
+
+function renderLocalization(question, draft, form, locked, update) {
+  const src = question.figures.find((figure) => !figure.placement)?.inlineUrl || question.imageUrl;
+  if (!src) {
+    form.append(element("p", question.correctionFigures.length
+      ? "Le visuel annoté est disponible dans le corrigé."
+      : "Le visuel de localisation est indisponible.", "muted"));
+    return false;
+  }
+  const frame = element("div", "", "localisation");
+  const target = element(locked ? "div" : "button", "", "zone");
+  if (!locked) {
+    target.type = "button";
+    target.setAttribute("aria-label", "Placer un point sur l’image");
+    form.append(element("p", "Clique sur l’image pour placer un point. Au clavier, utilise les flèches puis Entrée.", "muted small"));
+  }
+  appendImage(target, src, "Image de localisation");
+  frame.append(target);
+  form.append(frame);
+  const cursor = { x: 0.5, y: 0.5 };
+  const draw = () => {
+    target.querySelectorAll(".point").forEach((point) => point.remove());
+    const add = ({x, y}, label, extra) => {
+      const point = element("span", label, "point" + (extra ? " cursor" : ""));
+      point.style.left = x * 100 + "%";
+      point.style.top = y * 100 + "%";
+      point.setAttribute("aria-hidden", "true");
+      target.append(point);
+    };
+    draft.points.forEach((point, index) => add(point, String(index + 1), false));
+    if (!locked) add(cursor, "+", true);
+  };
+  if (!locked) {
+    target.addEventListener("keydown", (event) => {
+      const movement = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+      if (!movement) return;
+      event.preventDefault();
+      cursor.x = Math.max(0, Math.min(1, cursor.x + movement[0] * 0.04));
+      cursor.y = Math.max(0, Math.min(1, cursor.y + movement[1] * 0.04));
+      draw();
+    });
+    target.addEventListener("click", (event) => {
+      const bounds = target.getBoundingClientRect();
+      const point = event.detail === 0 ? { ...cursor }
+        : { x: (event.clientX - bounds.left) / bounds.width, y: (event.clientY - bounds.top) / bounds.height };
+      draft.points.push(point);
+      draw();
+      update();
+    });
+    form.append(button("Retirer le dernier point", () => { draft.points.pop(); draw(); update(); }, "link"));
+  }
+  draw();
+  return true;
+}
+
+function lockedCard(index) {
+  const question = questions[index];
+  const card = element("article", "", "card locked");
+  card.id = "question-" + index;
+  const badge = element("span", "", "lock-badge");
+  badge.append(icon("lock"));
+  const text = element("div");
+  text.append(element("strong", "Question " + numero(index) + (question.section ? " · " + question.section : "")),
+    element("p", "Se débloque quand tu auras validé la question précédente du dossier.", "muted small"));
+  card.append(badge, text);
+  return card;
+}
+
+function buildCard(index, solo) {
+  const question = questions[index];
+  const draft = drafts[index] ??= { selected: [], text: "", points: [] };
+  const locked = Boolean(attempts[index]);
+  const normalized = question.normalises ?? [];
+  const graded = (indices = []) => indices.filter((value) => !normalized.includes(value));
+  const expected = graded(question.correctAnswers);
+  const isQroc = question.type === "qroc" && !question.localization;
+  const fullyNormalized = question.fullyNormalized;
+  const card = element("article", "", "card");
+  card.id = "question-" + index;
+  if (!solo && index === current) card.classList.add("current");
+
+  const top = element("div", "", "card-top");
+  const pill = element("span", "", "section-pill");
+  pill.append(icon("pin"), element("span", question.section || question.sourceTitle || "Question"));
+  const flag = button("", () => { flagged[index] = !flagged[index]; flag.classList.toggle("on", flagged[index]); flag.setAttribute("aria-pressed", String(flagged[index])); renderPanel(); }, "icon-button flag" + (flagged[index] ? " on" : ""));
+  flag.append(icon("flag"));
+  flag.setAttribute("aria-pressed", String(Boolean(flagged[index])));
+  flag.setAttribute("aria-label", "Marquer la question " + numero(index));
+  flag.title = "Marquer pour y revenir";
+  top.append(pill, flag);
+  card.append(top);
+
+  if (question.context) card.append(element("p", question.context, "context"));
+  question.figures.filter((figure) => figure.placement === "context")
+    .forEach((figure) => appendImage(card, figure.inlineUrl, "Image du dossier"));
+  const heading = element("h2", "", "prompt");
+  heading.tabIndex = -1;
+  heading.append(element("span", "Q." + numero(index), "qnum"), document.createTextNode(" " + question.prompt));
+  card.append(heading);
+  const state = element("p", "", "state " + (locked ? "done" : "todo"));
+  state.append(element("i"), document.createTextNode(locked ? "Validée" : "Sans réponse"));
+  card.append(state);
+  if (!question.localization) {
+    const figures = question.figures.filter((figure) => !figure.placement);
+    const holder = element("div", "", "figures");
+    figures.forEach((figure, i) => appendImage(holder, figure.inlineUrl, "Schéma " + (i + 1)));
+    if (!figures.length) appendImage(holder, question.imageUrl, "Schéma de la question");
+    if (holder.childElementCount) card.append(holder);
+  }
+
+  const form = element("form");
+  const submit = element("button", question.localization ? "Voir le corrigé" : "Valider", "submit");
+  submit.type = "submit";
+  let hasLocalizationImage = false;
+  const update = () => {
+    submit.disabled = question.localization ? hasLocalizationImage && draft.points.length === 0
+      : isQroc ? !draft.text.trim() : !fullyNormalized && draft.selected.length === 0;
+  };
+  if (question.localization) {
+    hasLocalizationImage = renderLocalization(question, draft, form, locked, update);
+  } else if (isQroc) {
+    const label = element("label", "", "free-answer");
+    label.append(element("span", "Ta réponse", "muted small"));
+    const input = element("input");
+    input.type = "text";
+    input.value = draft.text;
+    input.readOnly = locked;
+    if (locked) input.classList.add(tone(index));
+    input.placeholder = "Écris ta réponse";
+    input.addEventListener("input", () => { draft.text = input.value; update(); });
+    label.append(input);
+    form.append(label);
+  } else {
+    const choices = element("fieldset", "", "options");
+    choices.append(element("legend", question.singleAnswer ? "Une seule réponse" : "Une ou plusieurs réponses", "sr-only"));
+    const addChoice = (text, value, figure) => {
+      const status = locked && (normalized.includes(value) ? "neutralisée"
+        : (value === -1 ? expected.length === 0 : expected.includes(value)) ? "attendue"
+        : draft.selected.includes(value) ? "non attendue" : "");
+      const option = element("label", "", "option");
+      if (status) option.dataset.status = status;
+      const match = /^\s*([A-Z])[.)]\s+/.exec(text);
+      option.append(element("span", value === -1 ? "∅" : match ? match[1] : String.fromCharCode(65 + value), "letter"));
+      const input = element("input");
+      input.type = question.singleAnswer ? "radio" : "checkbox";
+      input.name = "response-" + index;
+      input.checked = draft.selected.includes(value);
+      input.disabled = locked;
+      input.value = String(value);
+      const box = element("span", "", "box" + (question.singleAnswer ? " round" : ""));
+      const labelText = element("span", match ? text.slice(match[0].length) : text, "option-text");
+      if (figure) appendImage(labelText, figure.inlineUrl, "Schéma de la proposition " + (value + 1));
+      if (status) labelText.append(element("small", status === "attendue" ? "✓ attendue" : status === "non attendue" ? "✗ non attendue" : status, "verdict"));
+      option.append(input, box, labelText);
+      input.addEventListener("change", () => {
+        if (question.singleAnswer || value === -1) {
+          draft.selected = input.checked ? [value] : [];
+        } else {
+          draft.selected = draft.selected.filter((choice) => choice !== -1 && choice !== value);
+          if (input.checked) draft.selected.push(value);
+        }
+        choices.querySelectorAll("input").forEach((control) => {
+          control.checked = draft.selected.includes(Number(control.value));
+        });
+        update();
+      });
+      choices.append(option);
+    };
+    question.choices.forEach((text, value) => addChoice(text, value, question.choiceFigures[value]));
+    if (!question.explicitNone && !fullyNormalized) addChoice("Aucune de ces propositions n’est exacte", -1);
+    form.append(choices);
+  }
+  if (!locked) {
+    update();
+    form.append(submit);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (submit.disabled || attempts[index]) return;
+      const actual = graded(draft.selected.filter((choice) => choice >= 0));
+      scores[index] = !question.countsForScore ? null
+        : isQroc ? scoreQroc(question.correctAnswerText, draft.text)
+        : scoreQcm({ ...question, indispensables: graded(question.indispensables), inacceptables: graded(question.inacceptables) }, expected, actual);
+      attempts[index] = 1;
+      showQuestion(index);
+      document.querySelector("#question-" + index + " .correction")?.focus();
+    });
+  }
+  card.append(form);
+  if (locked) {
+    const feedback = element("section", "", "correction");
+    feedback.tabIndex = -1;
+    feedback.append(element("h3", "Corrigé"));
+    feedback.append(element("p", scores[index] === null ? (question.localization ? "Auto-évaluation" : "Hors barème")
+      : "Points obtenus : " + String(scores[index]).replace(".", ",") + " / 1", "points " + tone(index)));
+    if ((isQroc || question.localization) && question.correctAnswerText) {
+      feedback.append(element("p", "Réponse attendue · " + question.correctAnswerText));
+    }
+    if (question.explanation) feedback.append(element("p", question.explanation));
+    question.correctionFigures.forEach((figure, i) => appendImage(feedback, figure.inlineUrl, "Schéma du corrigé " + (i + 1)));
+    card.append(feedback);
+  }
+  if (!solo) return { card, heading };
+
+  const pager = element("div", "", "pager");
+  const prev = questions.findLastIndex((_, i) => i < index && !fermee(i));
+  const back = button("", () => showQuestion(prev), "ghost");
+  back.append(icon("back"), element("span", "Précédent"));
+  back.disabled = prev === -1;
+  pager.append(back);
+  const next = questions.findIndex((_, i) => i > index && !fermee(i));
+  const right = element("div", "", "pager-right");
+  if (questions[index + 1] && fermee(index + 1)) {
+    const hint = element("span", "", "muted small lock-hint");
+    hint.append(icon("lock"), document.createTextNode(" La question " + numero(index + 1) + " se débloque quand tu valides celle-ci."));
+    right.append(hint);
+    if (next !== -1) {
+      const skip = button("", () => showQuestion(next), "ghost");
+      skip.append(element("span", "Dossier suivant"), icon("chevron"));
+      right.append(skip);
+    }
+  } else if (next !== -1) {
+    const forward = button("", () => showQuestion(next), locked ? "primary" : "ghost");
+    forward.append(element("span", locked ? "Question suivante" : "Passer"), icon("chevron"));
+    right.append(forward);
+  } else if (answeredCount() === questions.length) {
+    right.append(button("Voir mon score", showResult, "primary"));
+  }
+  pager.append(right);
+  card.append(pager);
+  return { card, heading };
+}
+
+function showQuestion(index) {
+  if (index < 0 || fermee(index)) return;
+  finished = false;
+  current = index;
+  renderTopbar();
+  renderPanel();
+  if (viewMode === "one") {
+    const { card, heading } = buildCard(index, true);
+    main.replaceChildren(card);
+    window.scrollTo({ top: 0 });
+    heading.focus({ preventScroll: true });
+    return;
+  }
+  const cards = questions.map((_, i) => (fermee(i) ? lockedCard(i) : buildCard(i, false).card));
+  main.replaceChildren(...cards);
+  const target = cards[index];
+  const top = target.getBoundingClientRect().top + window.scrollY - (document.querySelector(".topbar")?.offsetHeight ?? 0) - 16;
+  window.scrollTo({ top: Math.max(0, top) });
+}
+
+function showResult() {
+  finished = true;
+  if (stopwatch.since !== null) { stopwatch.accumMs = stopwatchMs(); stopwatch.since = null; }
+  renderClock();
+  renderTopbar();
+  renderPanel();
+  const card = element("article", "", "card result");
+  const heading = element("h2", "Annale terminée");
+  heading.tabIndex = -1;
+  card.append(heading, element("p", gradedTotal
+    ? pointsTotal().toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " / " + gradedTotal + " points"
+    : "Annale hors barème", "big"));
+  card.append(element("p", "Temps passé : " + formatStopwatch(stopwatchMs()), "muted"));
+  card.append(button("Recommencer", () => {
+    attempts = {};
+    scores = [];
+    drafts = [];
+    flagged = {};
+    stopwatch.accumMs = 0;
+    stopwatch.since = Date.now();
+    renderClock();
+    showQuestion(0);
+  }, "primary"));
+  main.replaceChildren(card);
+  window.scrollTo({ top: 0 });
+  heading.focus({ preventScroll: true });
+}
+
+renderClock();
+setInterval(renderClock, 1000);
+renderPanelVisibility();
+if (questions.length) showQuestion(0);
+else main.append(element("p", "Cette annale ne contient aucune question."));
+</script></body></html>

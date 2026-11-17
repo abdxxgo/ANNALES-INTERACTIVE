@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Infectiologie 07/23-24</title>
+<style>/* Lecteur autonome d'une annale exportée — calqué sur le lecteur du site :
+   fond aurore, barre du haut et panneau de navigation qui restent à l'écran. */
+:root {
+  color-scheme: light;
+  --ink: #0f1b3d;
+  --muted: #5b6785;
+  --line: rgba(15, 27, 61, .10);
+  --card: rgba(255, 255, 255, .78);
+  --navy: #0b1f4f;
+  --accent: #0ea5c6;
+  --sel: #2f5bd8;
+  --ok: #16a34a;
+  --part: #f59e0b;
+  --bad: #dc2626;
+  --rec: #2563eb;
+  --top: 76px;
+  --surface: rgba(255, 255, 255, .76);
+  --surface-2: rgba(255, 255, 255, .7);
+  --edge: rgba(255, 255, 255, .85);
+  --solid: #ffffff;
+  --tint: rgba(15, 27, 61, .07);
+  --line-strong: rgba(15, 27, 61, .15);
+  --box-line: #3b4664;
+  --switch-off: #d4d9e4;
+  --ok-ink: #11713a; --part-ink: #8a5a00; --bad-ink: #a11d1d; --rec-ink: #1d4ed8;
+  --part-bg: #fff4dc;
+  --aurora: radial-gradient(60rem 30rem at 0% 0%, rgba(110, 231, 196, .55), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 0%, rgba(125, 211, 252, .55), transparent 60%),
+    radial-gradient(60rem 40rem at 40% 60%, rgba(196, 181, 253, .45), transparent 65%),
+    radial-gradient(50rem 40rem at 100% 100%, rgba(165, 243, 252, .5), transparent 60%),
+    #eef6fb;
+  font: 15px/1.55 "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-padding-top: calc(var(--top) + 24px); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--aurora);
+  background-attachment: fixed;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.icon { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 3px solid rgba(47, 91, 216, .45); outline-offset: 2px; }
+
+/* --- Barre du haut, collée en haut de l'écran --- */
+.topbar {
+  position: sticky; top: 12px; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  width: min(100% - 24px, 1180px); margin: 12px auto 0; padding: .8rem 1rem .8rem 1.25rem;
+  border: 1px solid var(--edge); border-radius: 22px;
+  background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(15, 27, 61, .18);
+}
+.titles { min-width: 0; }
+.topbar h1 { margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { display: flex; align-items: center; gap: .6rem; margin: .2rem 0 0; color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.pill { white-space: nowrap; padding: .1rem .55rem; border-radius: 999px; background: var(--tint); color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tools { display: flex; align-items: center; gap: .5rem; flex: none; }
+.chip {
+  display: inline-flex; align-items: center; gap: .45rem; height: 38px; padding: 0 .85rem;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2);
+  font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  box-shadow: 0 4px 12px -8px rgba(15, 27, 61, .3); transition: transform .12s, background-color .12s;
+}
+.chip:active { transform: scale(.96); }
+.clock[aria-pressed="true"] { border-color: rgba(245, 158, 11, .55); background: var(--part-bg); color: var(--part-ink); }
+.nav-toggle { border-color: rgba(47, 91, 216, .45); background: rgba(47, 91, 216, .08); color: var(--sel); }
+.nav-toggle .count {
+  display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 .4rem; border-radius: 999px;
+  background: linear-gradient(135deg, #22c4c4, #0ea5c6); color: white; font-size: .72rem; font-weight: 800;
+}
+
+/* --- Mise en page : questions à gauche, navigation à droite --- */
+.layout { width: min(100% - 24px, 1180px); margin: 18px auto 40px; }
+@media (min-width: 1024px) {
+  body.panel-open .layout { display: grid; grid-template-columns: minmax(0, 1fr) 16.5rem; gap: 20px; align-items: start; }
+  #panel { position: sticky; top: calc(var(--top) + 24px); max-height: calc(100vh - var(--top) - 40px); overflow: auto; }
+  body:not(.panel-open) #panel { display: none; }
+  .scrim { display: none; }
+}
+@media (max-width: 1023.98px) {
+  #panel {
+    position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: min(88vw, 20rem); overflow: auto;
+    border-radius: 24px 0 0 24px; transform: translateX(105%); transition: transform .25s ease;
+  }
+  body.panel-open #panel { transform: none; }
+  .scrim { position: fixed; inset: 0; z-index: 30; background: rgba(15, 27, 61, .25); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  body.panel-open .scrim { opacity: 1; pointer-events: auto; }
+  .nav-toggle .label { display: none; }
+}
+
+/* --- Panneau de navigation --- */
+#panel {
+  padding: 14px; border: 1px solid var(--edge); border-radius: 24px;
+  background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px rgba(15, 27, 61, .18);
+}
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+.panel-head h2 { margin: 0; font-size: .92rem; font-weight: 800; }
+.panel-head p { margin: .1rem 0 0; }
+.icon-button {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--muted);
+}
+.icon-button:hover { color: var(--ink); }
+.progress { height: 5px; margin: .75rem 0; border-radius: 999px; background: var(--tint); overflow: hidden; }
+.progress div { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6d8cf5, #22c4c4); transition: width .3s; }
+.tiles-scroll { max-height: 16rem; overflow: auto; padding-right: 4px; }
+.group + .group { margin-top: .6rem; }
+.group-label { margin-bottom: .3rem; font-size: .72rem; font-weight: 800; color: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.tile {
+  position: relative; height: 36px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface-2); color: var(--muted); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  transition: transform .12s;
+}
+.tile:not(:disabled):hover { transform: translateY(-1px); }
+.tile:disabled { opacity: .5; }
+.tile[aria-current] { border: 2px solid var(--navy); color: var(--ink); box-shadow: 0 0 0 3px rgba(11, 31, 79, .12); }
+.tile.correct { border-color: rgba(22, 163, 74, .45); background: rgba(22, 163, 74, .14); color: var(--ok-ink); }
+.tile.partial { border-color: rgba(245, 158, 11, .5); background: rgba(245, 158, 11, .15); color: var(--part-ink); }
+.tile.wrong { border-color: rgba(220, 38, 38, .45); background: rgba(220, 38, 38, .12); color: var(--bad-ink); }
+.tile.recorded { border-color: rgba(37, 99, 235, .45); background: rgba(37, 99, 235, .12); color: var(--rec-ink); }
+.tile.draft::after { content: ""; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--sel); box-shadow: 0 0 0 2px white; }
+.tile-lock { position: absolute; top: -5px; right: -5px; width: 13px; height: 13px; padding: 1px; border-radius: 50%; background: var(--solid); color: var(--muted); }
+.tile-flag { position: absolute; top: -4px; left: -4px; width: 11px; height: 11px; border-radius: 3px; background: var(--part); box-shadow: 0 0 0 2px white; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 55%, 0 70%); }
+.legend { display: flex; flex-wrap: wrap; gap: .25rem .7rem; margin-top: .7rem; font-size: .72rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot.correct { background: var(--ok); } .dot.partial { background: var(--part); } .dot.wrong { background: var(--bad); }
+.dot.recorded { background: var(--rec); } .dot.flagged { background: var(--part); border-radius: 2px; }
+.segment { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-top: .8rem; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); }
+.segment button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--muted); font-size: .8rem; font-weight: 700; }
+.segment button.active { background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+.row {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 40px; margin-top: .55rem;
+  padding: .45rem .8rem; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2);
+  color: var(--ink); font-size: .8rem; font-weight: 600; text-align: left;
+}
+.row-text { display: inline-flex; align-items: center; gap: .45rem; }
+.switch { position: relative; width: 34px; height: 20px; flex: none; border-radius: 999px; background: var(--switch-off); transition: background-color .15s; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--solid); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: left .15s; }
+.switch.on { background: var(--sel); }
+.switch.on::after { left: 16px; }
+.finish { width: 100%; height: 42px; margin-top: .7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--muted); font-weight: 700; }
+.finish.ready { border: 0; background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+
+/* --- Carte de question --- */
+main#annale { min-width: 0; }
+main#annale > * + * { margin-top: 16px; }
+.card {
+  padding: clamp(18px, 3.2vw, 30px); border: 1px solid var(--edge); border-radius: 26px;
+  background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 14px 34px -16px rgba(15, 27, 61, .2);
+}
+.card.current { box-shadow: 0 0 0 2px rgba(47, 91, 216, .35), 0 14px 34px -16px rgba(15, 27, 61, .2); }
+.card.locked { display: flex; align-items: center; gap: .9rem; padding: 16px 20px; background: var(--surface-2); }
+.card.locked p { margin: .1rem 0 0; }
+.lock-badge { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--tint); color: var(--muted); }
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+.section-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .7rem; border-radius: 999px; background: var(--tint); font-size: .78rem; font-weight: 700; }
+.section-pill .icon { color: #e11d48; }
+.flag { border: 0; background: none; width: 34px; height: 34px; border-radius: 50%; }
+.flag.on { background: rgba(245, 158, 11, .15); color: var(--part-ink); }
+.flag.on .icon { fill: currentColor; }
+.context { margin: 0 0 1rem; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.prompt { margin: 0; font-size: clamp(1.05rem, 2.3vw, 1.2rem); font-weight: 750; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qnum { color: var(--accent); font-weight: 800; }
+.prompt:focus, .correction:focus, .result h2:focus { outline: none; }
+.state { display: flex; align-items: center; gap: .4rem; margin: .45rem 0 1.1rem; font-size: .8rem; color: var(--muted); }
+.state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.state.done { color: var(--rec); }
+.figures img, .correction img { display: block; max-width: 100%; max-height: 22rem; height: auto; margin: .5rem auto; border-radius: 14px; border: 1px solid var(--line); background: var(--solid); }
+fieldset.options { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.option {
+  position: relative; display: flex; align-items: center; gap: .9rem; margin: 0 0 12px; padding: .95rem 1rem;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--surface-2); cursor: pointer;
+  transition: border-color .12s, background-color .12s;
+}
+.option:hover { border-color: rgba(47, 91, 216, .35); }
+.option input { position: absolute; opacity: 0; pointer-events: none; }
+.letter { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border: 1px solid var(--line); border-radius: 8px; background: var(--solid); font-size: .74rem; font-weight: 800; color: var(--muted); }
+.box { width: 22px; height: 22px; flex: none; border: 1.5px solid var(--box-line); border-radius: 6px; background: var(--solid); }
+.box.round { border-radius: 50%; }
+.option input:checked ~ .box { border-color: var(--sel); background: var(--sel); box-shadow: inset 0 0 0 3px white; }
+.option:has(input:checked) { border-color: rgba(47, 91, 216, .55); background: rgba(47, 91, 216, .07); }
+.option:has(input:focus-visible) { outline: 3px solid rgba(47, 91, 216, .45); outline-offset: 2px; }
+.option-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-weight: 500; }
+.option-text img { display: block; max-width: 100%; max-height: 18rem; margin-top: .5rem; border-radius: 10px; }
+.option[data-status="attendue"] { border-color: rgba(22, 163, 74, .5); background: rgba(22, 163, 74, .09); }
+.option[data-status="non attendue"] { border-color: rgba(220, 38, 38, .45); background: rgba(220, 38, 38, .07); }
+.option[data-status="neutralisée"] { background: var(--tint); }
+.verdict { display: block; margin-top: .2rem; font-weight: 700; font-size: .75rem; }
+[data-status="attendue"] .verdict { color: var(--ok-ink); } [data-status="non attendue"] .verdict { color: var(--bad-ink); }
+.free-answer { display: grid; gap: .4rem; margin-bottom: 1rem; }
+.free-answer input { width: 100%; height: 48px; padding: 0 1rem; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--solid); font: inherit; color: inherit; }
+.free-answer input.correct { border: 2px solid var(--ok); background: rgba(22, 163, 74, .08); color: var(--ok-ink); }
+.free-answer input.partial { border: 2px solid var(--part); background: rgba(245, 158, 11, .1); color: var(--part-ink); }
+.free-answer input.wrong { border: 2px solid var(--bad); background: rgba(220, 38, 38, .07); color: var(--bad-ink); }
+.submit {
+  width: 100%; height: 52px; margin-top: .4rem; border: 0; border-radius: 999px;
+  background: linear-gradient(90deg, #3f5fb5, #2fb9c6); color: white; font-weight: 800; font-size: 1rem;
+  box-shadow: 0 10px 24px -12px rgba(47, 91, 216, .6); transition: transform .12s, opacity .12s;
+}
+.submit:disabled { opacity: .55; box-shadow: none; }
+.submit:not(:disabled):active { transform: scale(.99); }
+.correction { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid rgba(47, 91, 216, .2); border-radius: 18px; background: rgba(47, 91, 216, .05); }
+.correction h3 { margin: 0 0 .3rem; font-size: .95rem; }
+.correction p { margin: .4rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.points { font-weight: 800; }
+.points.correct { color: var(--ok-ink); } .points.partial { color: var(--part-ink); } .points.wrong { color: var(--bad-ink); }
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; margin-top: 1.2rem; }
+.pager-right { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .6rem; }
+.ghost, .primary {
+  display: inline-flex; align-items: center; gap: .35rem; height: 42px; padding: 0 1.1rem; border-radius: 999px; font-weight: 700; font-size: .88rem;
+}
+.ghost { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.ghost:disabled { opacity: .45; }
+.primary { border: 0; background: linear-gradient(90deg, var(--navy), #0e7490); color: white; }
+.lock-hint { display: inline-flex; align-items: center; gap: .3rem; }
+.link { margin: .2rem 0 .6rem; border: 0; background: none; color: var(--sel); font-weight: 600; padding: 0; }
+.result { text-align: center; }
+.result h2 { margin: 0; font-size: 1.4rem; }
+.big { font-size: 2rem; font-weight: 800; margin: .6rem 0; }
+.result .primary { margin-top: .6rem; }
+.localisation { margin: .7rem 0; }
+.zone { display: inline-block; position: relative; padding: 0; border: 0; max-width: 100%; background: none; }
+button.zone { cursor: crosshair; }
+.zone img { display: block; max-width: 100%; margin: 0; border-radius: 12px; }
+.point { position: absolute; transform: translate(-50%, -50%); min-width: 1.6rem; border: 2px solid white; border-radius: 50%; background: var(--sel); color: white; text-align: center; pointer-events: none; }
+.point.cursor { visibility: hidden; }
+.zone:focus-visible .point.cursor { visibility: visible; }
+
+/* --- Mode sombre : réglage de l'appareil par défaut, bouton ☀️/🌙 pour choisir --- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e8edf8; --muted: #9aa6c3; --line: rgba(255, 255, 255, .10); --line-strong: rgba(255, 255, 255, .18);
+  --card: rgba(22, 26, 48, .78); --surface: rgba(22, 26, 48, .78); --surface-2: rgba(255, 255, 255, .05);
+  --edge: rgba(255, 255, 255, .08); --solid: #1b2140; --tint: rgba(255, 255, 255, .08);
+  --navy: #3b5bdb; --accent: #5ccfe6; --sel: #7c9cff; --box-line: #8b97b8; --switch-off: #3a4363;
+  --ok-ink: #6ee7a0; --part-ink: #fbbf5c; --bad-ink: #ff8a8a; --rec-ink: #93b4ff; --part-bg: rgba(245, 158, 11, .16);
+  --aurora: radial-gradient(60rem 30rem at 10% 0%, rgba(56, 40, 120, .55), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 10%, rgba(20, 90, 120, .45), transparent 60%),
+    radial-gradient(60rem 40rem at 40% 70%, rgba(90, 30, 110, .40), transparent 65%),
+    #0b0f22;
+}
+:root[data-theme="dark"] .figures img, :root[data-theme="dark"] .correction img, :root[data-theme="dark"] .option-text img { background: #ffffff; }
+.theme-toggle { width: 38px; justify-content: center; padding: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style></head><body>
+<header class="topbar"><div class="titles"><h1>Infectiologie 07/23-24</h1><p class="sub"><span id="position" aria-live="polite"></span><span id="score" class="pill"></span></p></div><div class="tools" id="tools"></div></header>
+<div class="layout"><main id="annale"></main><aside id="panel" aria-label="Navigation de l'examen"></aside></div>
+<div class="scrim" aria-hidden="true"></div>
+<noscript>Active JavaScript pour répondre aux questions de cette annale.</noscript>
+<script type="application/json" id="soschimie-annale-data">{"title":"Infectiologie 07/23-24","questions":[{"id":"q-1","type":"qcm","choices":["A. une infection dont l’incubation est ≥ 3 jours diagnostiquée 24h après l’admission est considérée comme nosocomiale","B. une infection de prothèse de hanche survenant 9 mois après l’intervention chirurgicale est considérée comme associée aux soins","C. une infection associée aux soins est nécessairement nosocomiale","D. une infection urinaire survenant 48h après l’admission est considérée comme nosocomiale","E. une bactériémie à staphylocoque survenant 48h après le début de l’hospitalisation est considérée comme nosocomiale"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme âgée de 85 ans, et ayant pour antécédent une chirurgie pour prothèse de hanche, est hospitalisée pour de la fièvre. Vous évoquez une infection associée aux soins.","prompt":"Sur la base de la (des)quelles des situations cliniques suivantes, un diagnostic d'infection associée aux soins pourrait être retenu ?","section":"KFP1","qNumber":"1","sourceSegmentTitle":"KFP1","localization":false,"needsImage":false,"correctAnswers":[1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : une incubation ≥ 3 jours diagnostiquée à 24h ne répond pas au critère de délai de 48h. B. vrai : une infection sur matériel posé est associée aux soins jusqu'à 1 an après. C. faux : une infection associée aux soins peut être extra-hospitalière (ville). D. vrai : elle survient après 48h d'admission. E. vrai : elle survient à partir de 48h d'hospitalisation.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-2","type":"qcm","choices":["A. Enterococcus faecalis fait partie des pathogènes les plus fréquents dans cette situation","B. Staphylococcus aureus fait partie des pathogènes les plus fréquents dans cette situation","C. Klebsiella pneumoniae fait partie des pathogènes les plus fréquents dans cette situation","D. Il est possible de désadapter la poche d’urines pour prélever un ECBU","E. Le sac collecteur peut être positionné dans le lit","F. Une antibiothérapie est recommandée avant le changement de sonde en cas de bactériurie","G. En cas de fièvre une bandelette urinaire est recommandée pour conforter le diagnostic","H. En cas de présence de dépôts dans les urines le changement de sonde urinaire est recommandé","I. En cas de traitement antibiotique d’une infection urinaire sur sonde le changement de sonde est recommandé","J. L’infection urinaire est l’infection nosocomiale la plus fréquente"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme âgée de 85 ans, et ayant pour antécédent une chirurgie pour prothèse de hanche, est hospitalisée pour de la fièvre. Vous évoquez une infection associée aux soins.","prompt":"La patiente était en rétention aiguë d’urines, elle a donc été sondée à demeure. Concernant l’infection urinaire nosocomiale de la patiente, quelles sont les 4 affirmations exactes ?","section":"KFP1","qNumber":"2","sourceSegmentTitle":"KFP1","localization":false,"needsImage":false,"correctAnswers":[0,2,8,9],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : l'entérocoque est fréquent dans les infections sur sonde. B. faux : S. aureus n'est pas parmi les plus fréquents. C. vrai : les entérobactéries comme Klebsiella sont fréquentes. D. faux : le système clos ne doit pas être ouvert; on prélève sur le site dédié. E. faux : le sac doit rester sous le niveau de la vessie, sans contact avec le sol. F. faux : pas d'antibiotique systématique pour une bactériurie avant changement. G. faux : la bandelette n'est pas recommandée sur sonde. H. faux : des dépôts seuls n'imposent pas de changement. I. vrai : le changement de sonde accompagne le traitement. J. vrai : c'est l'infection nosocomiale la plus fréquente.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-3","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme âgée de 85 ans, et ayant pour antécédent une chirurgie pour prothèse de hanche, est hospitalisée pour de la fièvre. Vous évoquez une infection associée aux soins.","prompt":"L’ECBU isole une entérobactérie productrice de bêta-lactamase à spectre étendu. Quel type de précautions complémentaires préconisez-vous","section":"KFP1","qNumber":"3","sourceSegmentTitle":"KFP1","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"Contact / Précautions complémentaires contact / Précautions contact","explanation":"Une entérobactérie BLSE est une bactérie multirésistante à transmission manuportée, d'où des précautions complémentaires de type contact.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-4","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Devant cette impossibilité d’uriner depuis une quinzaine d’heures que recherchez vous par un examen clinique simple ?","section":"DP1","qNumber":"1","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"globe vésical / globe urinaire","explanation":"Devant une impossibilité d'uriner, l'examen clinique simple recherche un globe vésical (voussure sus-pubienne, matité convexe vers le haut à la percussion, douloureuse à la palpation). Commentaire du corrigé : acceptable Rétention aiguë d'urine ; globe urinaire.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-5","type":"qcm","choices":["A. Silence vésical à l’auscultation de la zone périnéale","B. Douleur à la pression forte de la zone périnéale","C. Déclenchement d’une envie d’uriner à la stimulation de la face antérieure du vagin lors d’un toucher vaginal","D. Matité à la percussion de la zone hypogastrique basse","E. Présence d’urine au sondage urinaire"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Vous pensez à un globe vésical. Quel geste clinique vous permet de corroborer votre hypothèse ?","section":"DP1","qNumber":"2","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : l'auscultation n'est pas un test de globe. B. faux : non spécifique. C. faux : sans valeur diagnostique. D. vrai : la vessie pleine est mate à la percussion hypogastrique. E. faux : le sondage est un geste thérapeutique, pas le geste clinique de corroboration.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-6","type":"qcm","choices":["A. Erysipèle","B. primo infection au papillomavirus","C. primo-infection herpétique","D. gonococcie","E. allergie de contact au latex (préservatifs)"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Devant ce tableau clinique, quel diagnostic vous parait le plus probable ?","section":"DP1","qNumber":"3","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : pas de placard érythémateux fébrile. B. faux : HPV donne des condylomes. C. vrai : vésicules, ulcérations douloureuses, rétention urinaire. D. faux : écoulement purulent. E. faux : pas de vésicules ulcérées de ce type.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-7","type":"qcm","choices":["A. Rapport 3 jours avant le début des symptômes","B. Rapport 5 jours avant le début des symptômes","C. Rapport 15 jours avant le début des symptômes","D. Rapport 20 jours avant le début des symptômes","E. Rapport 30 jours avant le début des symptômes"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Le diagnostic le plus probable est une primo-infection herpétique. Vous indiquez à la patiente que la transmission s’est faite très vraisemblablement à l’occasion d’un rapport sexuel. La patiente vous indique ne pas avoir de partenaire fixe et avoir eu 5 rapports non protégés dans le dernier mois avec des partenaires différents dont elle est en mesure de préciser les dates. Le ou les quels de ce/ces rapport/s potentiellement infectant/s est/sont compatibles avec cette primo-infection herpétique?","section":"DP1","qNumber":"4","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[0,1],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : dans l'incubation de 2 à 7 jours. B. vrai : idem. C. faux : trop long. D. faux : trop long. E. faux : L'incubation est de 2 à 7 jours.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-8","type":"qcm","choices":["A. recherche du virus herpes simplex (HSV) par PCR sur un prélèvement des lésions génitales","B. recherche du virus herpes simplex (HSV) par PCR sur un prélèvement sanguin","C. examen cytobactériologique des urines","D. sérologie VIH","E. sérologie toxoplasmose"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Devant ce tableau typique de primo-infection herpétique, quel(s) examen(s) biologique(s) est(sont) recommandé(s) chez cette patiente ? :","section":"DP1","qNumber":"5","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : tableau typique, aucune confirmation nécessaire. B. faux : non indiquée. C. faux : pas d'indication. D. vrai : exposition à une IST. E. faux : Devant un tableau typique comme celui là aucun examen n'est nécessaire pour la confirmation diagnostique. Par contre il y a eu exposition à IST : une sérologie VIH est indispensable . La séro toxo est un distracteur.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-9","type":"qcm","choices":["A. amoxicilline per os pendant 7 jours","B. valaciclovir per os pendant 10 jours","C. pommade à l'aciclovir en application locale pendant 10 jours","D. pommade corticoïdes en application locale","E. antalgique palier 2 à la demande"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Quel(s) traitement(s) lui prescrivez vous ?","section":"DP1","qNumber":"6","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[1,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[3],"normalises":[],"correctAnswerText":"","explanation":"A. faux : antibiotique inutile pour un virus. B. vrai : antiviral systémique. C. faux : le local est inefficace. D. contre-indiqué: les corticoïdes sont affichés Inacceptable. D. faux (inacceptable). E. vrai : douleur importante.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-10","type":"qcm","choices":["A. La fréquence des récurrences est imprévisible à ce stade","B. Des sensations locales comme des brulures ou des picotements peuvent précéder l’apparition des lésions","C. Les lésions de récurrence sont en général plus intenses que lors de la primo-infection","D. Un traitement préventif des récurrences lui sera proposé dès la 1ère récurrence","E. En dehors des périodes de récurrence (avec des lésions actives visibles) le risque de transmission sexuelle est absolument nul","F. Lors d’une récurrence et même si un traitement précoce est prescrit il faut plus d’un mois pour que les lésions cicatrisent"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Un mois plus tard la patiente va beaucoup mieux avec des lésions presque complètement cicatrisées. Vous l’informez du risque de récidive (récurrence). Parmi les informations ci-dessous quelle(s) est/ sont celle(s) pertinente(s) à lui transmettre ?","section":"DP1","qNumber":"7","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[0,1],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : imprévisible. B. vrai : prodromes. C. faux : moins intenses. D. faux : seulement si récurrences fréquentes. E. faux : excrétion asymptomatique possible. F. faux : cicatrisation en quelques jours.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-11","type":"qcm","choices":["A. Oui c’est sûr","B. Non ce n’est pas sûr"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"En raison de cette situation à risque d’IST vous lui aviez prescrit une sérologie VIH le jour de votre consultation initiale. Cette sérologie a donc été prélevée 5 jours après le dernier rapport non protégé. Le résultat est négatif et la patiente vous demande si on peut être sûr qu’elle n’est pas infectée par le VIH. Quelle est votre réponse ?","section":"DP1","qNumber":"8","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[1],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : 5 jours est inférieur à la fenêtre sérologique. B. vrai : les anticorps ne sont pas encore détectables.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-12","type":"qcm","choices":["A. les anticorps prouvant la présence du VIH apparaissent en moyenne 5 jours après le rapport infectant","B. les anticorps prouvant la présence du VIH apparaissent en moyenne 10 jours après le rapport infectant","C. les anticorps prouvant la présence du VIH apparaissent en moyenne 20 jours après le rapport infectant","D. les anticorps prouvant la présence du VIH apparaissent en moyenne 30 jours après le rapport infectant","E. les anticorps prouvant la présence du VIH apparaissent en moyenne 40 jours après le rapport infectant"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Vous lui répondez qu’on ne peut pas être sûr qu’elle n’est pas infectée par le VIH malgré la négativité de la sérologie. Elle réclame une explication. Quelle est la bonne réponse à lui fournir ?","section":"DP1","qNumber":"9","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : trop précoce. B. faux : trop précoce. C. vrai : environ 20 jours. D. faux : trop tardif en moyenne. E. faux : trop tardif.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-13","type":"qcm","choices":["A. oui","B. non"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"La patiente vous indique alors que son dernier partenaire était un inconnu rencontré en boite et que rétrospectivement elle s’inquiète par rapport au risque d’infection VIH car la seule chose qu’elle sait de lui est qu’il avait beaucoup de partenaires. Lui prescrivez-vous un traitement post exposition ?","section":"DP1","qNumber":"10","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[1],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : le TPE doit être débuté dans les 48 h, délai dépassé ici (rapport 5 jours avant). B. vrai : non indiqué.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-14","type":"qcm","choices":["A. Le TPE n’est efficace que prescrit dans les heures qui suivent le rapport exposant","B. Le TPE est réservé aux personnes victimes de viol mais pas aux personnes qui pouvaient se protéger lors du rapport exposant","C. Le TPE n’a aucune efficacité et n’est prescrit que pour rassurer les personnes exposées","D. Le TPE n’est proposé que pour les soignants exposés à des piqûres accidentelles dans le cadre de leur métier"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Comme vous ne lui prescrivez pas de traitement post exposition (TPE) alors qu’elle en a entendu parler et qu’elle le réclame, quel(s) est/sont votre/vos argument(s) ?","section":"DP1","qNumber":"11","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[0],"singleAnswer":false,"explicitNone":false,"indispensables":[0],"inacceptables":[1,2,3],"normalises":[],"correctAnswerText":"","explanation":"A. vrai (indispensable) : indispensable, efficace seulement s'il est débuté précocement. B. faux (inacceptable) : inacceptable, il concerne aussi les rapports à risque. C. faux (inacceptable) : inacceptable, il est efficace. D. faux (inacceptable) : inacceptable, non limité aux soignants.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-15","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Vous vous rendez compte que la patiente qui vous dit que ses premiers rapports remontent à moins d’un an est peu informée des risques d’IST. En dehors de l’herpès de type 2, vous lui parlez alors de plusieurs risques auxquels elle est exposée comme la syphilis, la chlamydiose, la gonococcie, la trichomonose, l’hépatite B. Sans évoquer des IST rares, quelle autre IST très fréquente faut il évoquer avec elle ?","section":"DP1","qNumber":"12","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"Infection à papillomavirus / infection HPV","explanation":"L'infection HPV est l'IST la plus fréquente et n'a pas été citée.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-16","type":"qcm","choices":["A. Diminution du risque de cancer du sein","B. Diminution du risque de cancer des ovaires","C. Diminution du risque de cancer du col utérin","D. Diminution du risque de cancer du colon","E. Diminution du risque de cancer de la thyroïde"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"Vous lui parlez de l’infection à papillomavirus mais elle n’en a jamais entendu parler. Quel argument mettez vous en avant pour la convaincre de se faire vacciner ?","section":"DP1","qNumber":"13","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : non lié à HPV. B. faux : non lié. C. vrai : HPV est la cause du cancer du col. D. faux : non lié. E. faux : non lié.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-17","type":"qcm","choices":["A. 1 dose","B. 2 doses","C. 3 doses","D. 4 doses","E. 5 doses"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Une femme de 19 ans vous consulte en fin d’après-midi dans un centre municipal de santé pour la survenue de douleurs pelviennes antérieures très invalidantes apparues il y a 2 jours. Elle n'a pas d'antécédents médicaux notables. Ses douleurs sont importantes et elle les décrit comme une sensation de brulure. A l'examen clinique, vous observez une muqueuse très inflammatoire avec des vésicules mais aussi des érosions et des ulcérations superficielles qui concernent la vulve, le vagin et la zone cutanée périnéale. Vous observez à certains endroits de la zone inflammatoire un exsudat blanchâtre. La température est à 37°8 C. La patiente vous indique ne plus pouvoir uriner depuis la nuit. Le reste de l’examen clinique est sans particularité sachant que la douleur est telle que vous ne pouvez pas examiner la sphère génitale de façon plus approfondie et encore moins réaliser un toucher pelvien.","prompt":"La patiente est convaincue et vous demande à être vaccinée. Combien de dose(s) vaccinale(s) faudra t’il lui faire ?","section":"DP1","qNumber":"14","sourceSegmentTitle":"DP1","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : insuffisant. B. faux : schéma réservé aux 11-14 ans. C. vrai : 3 doses à partir de 15 ans. D. faux : trop. E. faux : trop.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-18","type":"qcm","choices":["A. Il est indiqué de prescrire un traitement symptomatique antalgique par paracétamol","B. Il est indiqué de prescrire un traitement symptomatique décongestionnant par corticoïdes ou AINS et lavage des fosses nasales","C. Il est indiqué de prescrire un traitement antibiotique pour les rhinites","D. Il est indiqué de prescrire un traitement antibiotique pour les pharyngites","E. Il est indiqué de prescrire un traitement antibiotique pour les sinusites bactériennes"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Concernant les infections respiratoires hautes, quelle(s) est/sont la/les indication(s) thérapeutique(s) justes parmi les propositions suivantes ?","section":"SQI1","qNumber":"1","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : le paracétamol traite la douleur et la fièvre. B. faux : corticoïdes et AINS ne sont pas indiqués. C. faux : rhinite le plus souvent virale. D. faux : antibiotique seulement si SBHA confirmé. E. vrai : la sinusite bactérienne justifie une antibiothérapie.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-19","type":"qcm","choices":["A. Infection opportuniste par Pneumocystis jirovecii","B. Lymphomes et cancers solides","C. Réactivation CMV quand les T CD4+ sont inférieurs à 100/mm3","D. AEG","E. Cirrhose hépatique quand les T CD4+ sont inférieurs à 200/mm3"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes, laquelle ou lesquelles est(sont) une(des) complication(s) fréquente(s) de l'infection VIH non traitée ?","section":"SQI1","qNumber":"2","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,1,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : infection opportuniste classique. B. vrai : risque accru de cancers. C. vrai : CMV se réactive sous 100 CD4. D. vrai : altération de l'état général fréquente. E. faux : la cirrhose n'est pas liée au taux de CD4.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-20","type":"qcm","choices":["A. Après arrêt de 48 h de toute antibiothérapie","B. Asepsie parfaite","C. Après arrêt de 15 jours de toute antibiothérapie","D. Un prélèvement de fistule","E. Prélèvements conservés à +4°C"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Dans le cadre du diagnostic microbiologique d’une infection ostéo-articulaire, quels sont les pré-requis exacts pour la réalisation des prélèvements et la conservation des échantillons?","section":"SQI1","qNumber":"3","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : 48 h insuffisant. B. vrai : asepsie indispensable. C. vrai : fenêtre antibiotique de 15 jours. D. faux : fistule colonisée, non fiable. E. faux : conservation non à +4°C selon le corrigé.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-21","type":"qcm","choices":["A. la phtirose est une parasitose fréquente","B. le prurit pubien est le principal symptôme","C. la parasitose due à Phtirus pubis n’est pas une infection sexuellement transmissible","D. les poux du pubis peuvent se retrouver sur les cils et les cheveux","E. les poux du pubis sont responsables d’une affection grave"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes sur les poux du pubis, indiquez les propositions vraies :","section":"SQI1","qNumber":"4","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[1,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : Elle est rare. B. vrai : C’est un prurit essentiellement de la région pubienne. C. faux : C’est une infection transmissible sexuellement. D. vrai : Il est possible d’en retrouver au niveau des cils et des cheveux. E. faux : C’est une maladie bénigne.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-22","type":"qcm","choices":["A. L'EBV est une cause d’angine pseudo-membraneuse","B. La diphtérie est une cause d’angine pseudo-membraneuse","C. L’angine de Vincent est une angine fébrile unilatérale avec ulcération grisâtre profonde de cause virale sur un terrain de mauvais état bucco-dentaire","D. L’angine vésiculeuse est toujours de cause virale","E. Le chancre syphilitique primaire, dans sa localisation orale, est une cause d’angine ulcéreuse"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Concernant les étiologies infectieuses des angines de l’enfant et de l’adulte, quelle(s) est/sont la/les proposition(s) vraie(s) ?","section":"SQI1","qNumber":"5","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : mononucléose. B. vrai : fausses membranes diphtériques. C. faux : l'angine de Vincent est bactérienne (anaérobies), apyrétique. D. vrai : selon le corrigé : étiologie virale. E. vrai : chancre syphilitique buccal.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-23","type":"qcm","choices":["A. les poux de tête sont des insectes hématophages","B. les poux de tête survivent plusieurs jours sur des vêtements","C. les poux de tête parasitent les enfants et les adultes","D. les poux de tête peuvent sauter d’une tête à une autre","E. les repas sanguins des poux sont responsables de prurit du cuir chevelu"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes sur les poux de tête, indiquez celles qui sont justes :","section":"SQI1","qNumber":"6","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : Ce sont des insectes qui se nourrissent de sang humain. B. faux : Ils ne vivent que quelques heures hors du cuir chevelu. C. vrai : Toutes les catégories d’âge peuvent être touchées. D. faux : Les poux ne sautent pas et ne marchent pas. E. vrai : Ce sont les piqures liées aux repas sanguins qui sont responsables du prurit.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-24","type":"qcm","choices":["A. Prostatite","B. Plaie colonisée et/ou purulent sans signes d’infection tissulaire","C. Bactériurie asymptomatique chez la femme enceinte","D. Méningite bactérienne","E. : Fièvre isolée chez l’immunocompétent sans signe de gravité"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Quels sont les situations cliniques nécessitant un traitement antibiotique ?","section":"SQI1","qNumber":"7","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : infection à traiter. B. faux : simple colonisation. C. vrai : dépistage et traitement chez la femme enceinte. D. vrai : urgence thérapeutique. E. faux : pas d'antibiotique sans signe de gravité.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-25","type":"qcm","choices":["A. Prélèvement de fistule","B. Ecouvillonnage de la cicatrice","C. Ponction articulaire","D. Flacons d’hémoculture","E. Prélèvements per opératoires"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Quelles sont les types de prélèvements appropriés pour le diagnostic d’une infection ostéo-articulaire sur matériel?","section":"SQI1","qNumber":"8","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[2,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : flore de colonisation. B. faux : écouvillon superficiel non fiable. C. vrai : ponction articulaire. D. vrai : hémocultures utiles. E. vrai : prélèvements profonds per-opératoires.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-26","type":"qcm","choices":["A. les poux de corps donnent des lésions maculopapuleuses du dos et du thorax","B. les poux de corps sont plus souvent retrouvés parmi les SDF que dans la population générale","C. les poux de corps pondent leurs œufs sur les poils du corps","D. les poux de corps se retrouvent surtout sur les vêtements","E. les poux de corps ressemblent morphologiquement aux poux de tête"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les propositions suivantes sur les poux de corps, indiquez celles qui sont vraies :","section":"SQI1","qNumber":"9","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,1,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : Elles prédominent sur les épaules, le dos et le thorax. B. vrai : Ils sont associés à une certaine précarité. C. faux : Ils pondent leurs œufs sur les vêtements. D. vrai : Ils vivent sur les vêtements. E. vrai : Il y a une grande ressemblance entre ces deux poux.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-27","type":"qcm","choices":["A. L'étiologie principale est le streptocoque beta-hémolytique du groupe A (SBHA)","B. La mise en évidence d’un pneumocoque sur un prélèvement de gorge pour une angine pose l’indication d’antibiothérapie immédiate pour prévenir les complications","C. La présence du SBHA peut être recherchée par un MNI-test dans le sang","D. La présence du SBHA peut être objectivée par un test de diagnostic rapide sur frottis pharyngé","E. L'angine bactérienne est beaucoup plus fréquente que l’angine virale chez le petit nourrisson à l’immunité immature"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Concernant les angines bactériennes, quelle(s) est/sont la/les proposition(s) vraie(s) ?","section":"SQI1","qNumber":"10","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : SBHA principal. B. faux : le pneumocoque n'impose pas d'antibiotique. C. faux : le MNI-test cherche l'EBV. D. vrai : TDR sur frottis. E. faux : les angines virales dominent chez le nourrisson.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-28","type":"qcm","choices":["A. Patient diabétique","B. Patient porteur de prothèse articulaire","C. Femme enceinte","D. Geste sur les voies urinaires","E. Patient immunodéprimé"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi les situations suivantes, quelle(s) est/sont le(s) cas de colonisation urinaire justifiant un traitement antibiotique ?","section":"SQI1","qNumber":"11","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[2,3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : pas de traitement. B. faux : pas d'indication. C. vrai : risque de pyélonéphrite. D. vrai : avant geste invasif. E. faux : pas de traitement systématique.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-29","type":"qcm","choices":["A. Une recherche d’antigène P24 chez le patient, source de l'AES","B. Un dépistage VIH-1/2 chez le professionnel exposé, victime de l'AES","C. Un dépistage VIH-1/2 chez le patient, source de l'AES","D. Une recherche d’antigène P24 chez le professionnel exposé, victime de l'AES","E. Une charge virale VIH (marqueur le plus précoce de l'infection) chez le professionnel exposé, victime de l'AES"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"En cas d'exposition au sang par piqûre lors de la réalisation d'un gaz du sang chez un patient de statut sérologique VIH inconnu, quel est l’examen à réaliser en urgence ?","section":"SQI1","qNumber":"12","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : le dépistage standard suffit. B. faux : le statut de la source prime. C. vrai : dépistage chez le patient source. D. faux : non indiqué. E. faux : non indiquée en urgence.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-30","type":"qcm","choices":["A. 14 jours en cas de traitement par une fluoroquinolone","B. 3 semaines en cas de traitement par du cotrimoxazole","C. 10 jours en cas de traitement par une fluoroquinolone","D. 14 jours en cas de traitement par du cotrimoxazole","E. 3 semaines en cas de traitement par une céphalosporines de 3ème génération"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Dans le cas d’une prostatite, parmi les réponses suivantes, quelle(s) sont les durées exactes de traitement?","section":"SQI1","qNumber":"13","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : 14 jours. B. faux : 14 jours. C. faux : 14 jours. D. vrai : 14 jours. E. vrai : 3 semaines.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-31","type":"qcm","choices":["A. l’incubation est de 3 jours au cours d’une première contamination","B. les espaces inter-digitaux sont rarement touchés","C. dans la prise en charge du patient, la décontamination de l’environnement n’est pas nécessaire","D. la gale est responsable d’épidémies dans les établissements pour personnes âgées","E. la gale donne habituellement un prurit"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Parmi ces propositions suivantes, indiquez les réponses justes sur la gale :","section":"SQI1","qNumber":"14","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : Elle est de 5 jours à un mois (en général 2-3 semaines). B. faux : C’est l’une des localisations principales de la maladie. C. faux : La décontamination de l’environnement est nécessaire. D. vrai : Ainsi que dans les autres collectivités (crèche, école, …). E. vrai : C’est le principal symptôme.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-32","type":"qcm","choices":["A. le sarcopte est un acarien","B. le sarcopte se transmet directement par contact cutané, peau contre peau","C. le sarcopte se transmet indirectement par l’intermédiaire de tissus contaminés","D. la gale n’est pas sexuellement transmissible","E. la contagiosité est faible"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"","prompt":"Vous êtes interne aux urgences et vous suspectez une gale chez un de vos patients. Celui-ci vous demande des renseigneme","section":"SQI1","qNumber":"15","sourceSegmentTitle":"SQI1","localization":false,"needsImage":false,"correctAnswers":[0,1,2],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : C’est un acarien. B. vrai : La transmission est cutanée. C. vrai : Elle peut se faire aussi par des objets contaminés. D. faux : C’est une maladie sexuellement transmissible. E. faux : La contagiosité est très importante.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-33","type":"qcm","choices":["A. Troubles des fonctions supérieures","B. Hypotension artérielle systolique \u003c 90 mmHg","C. Tachycardie > 120 battements par minutes","D. Un hippocratisme digital","E. Fréquence respiratoire >= 30 / minutes"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Quels signes de gravité recherchez vous immédiatement ?","section":"DP2","qNumber":"1","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[0,1,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : confusion = signe de gravité. B. vrai : choc. C. vrai : tachycardie >120 est un critère de gravité. D. faux : signe chronique, non aigu. E. vrai : polypnée ≥30.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-34","type":"qcm","choices":["A. Prostatite","B. Légionellose","C. Bronchite aiguë","D. Pneumopathie communautaire","E. Tuberculose pulmonaire"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Le patient est bien orienté. Les constantes retrouvent une tension artérielle à 120 / 80 mmHg, un pouls à 90 bpm, une fréquence respiratoire à 18 par minutes, une saturation à 92% et une température à 38,2°C. L'examen clinique retrouve un foyer de crépitants en base droite.\nLa glycémie capillaire est à 2.1 g/L sans cétones.\nQuel est le diagnostic le plus probable?","section":"DP2","qNumber":"2","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : pas de signe urinaire. B. faux : rien n'évoque une légionellose. C. faux : foyer de crépitants, fièvre. D. vrai : fièvre et foyer de crépitants. E. faux : évolution aiguë de 48 h.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-35","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Quelle est votre première action thérapeutique face à ce patient?","section":"DP2","qNumber":"3","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"oxygène / oxygénothérapie / O2","explanation":"Saturation à 92% : on commence par l'oxygénothérapie.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-36","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Quel premier examen prescrivez vous pour confirmer le diagnostic?","section":"DP2","qNumber":"4","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"radio pulmonaire / radiographie pulmonaire / cliché thoracique (accepté pour une partie des points : radiographie / radio / RP)","explanation":"La radiographie thoracique confirme la pneumopathie.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-37","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[{"figureId":"q-37-corrige-0","nodeId":"","inlineUrl":"data:image/jpeg;base64,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","width":1000,"height":648,"bytes":40869}],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Vous récupérez la radio réalisée en urgence. Pointez les zones pathologiques.","section":"DP2","qNumber":"5","sourceSegmentTitle":"DP2","localization":true,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"Zone(s) attendue(s) : voir l'image de la correction.","explanation":"Deux foyers pathologiques sont attendus, un de chaque côté.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":false},{"id":"q-38","type":"qcm","choices":["A. Pneumonie alvéolaire","B. Pneumonie interstitielle","C. Condensation parenchymateuse systématisée","D. Pneumonie multi-lobaire","E. Condensation parenchymateuse avec appui scissural"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Quels sont le ou les diagnostics radiologiques correct(s)?","section":"DP2","qNumber":"6","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[0,2,3,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : syndrome alvéolaire. B. faux : pas d'atteinte interstitielle. C. vrai : condensation systématisée. D. vrai : plusieurs lobes. E. vrai : appui scissural.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-39","type":"qcm","choices":["A. Hospitalisation","B. Prise en soins ambulatoire","C. Antibiothérapie par amoxicilline acide clavulanique","D. Antibiothérapie par azithromycine","E. Réhydratation intraveineuse"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Le bilan biologique retrouve des leucocytes à 12.5 G/L, une hémoglobine à 13.7 g/dL, des plaquettes à 209x10*9/L, un Sodium à 137 mmol/L, un Potassium à 4.5 mmol/L, une créatinine à 100 micromol/L, une CRP à 120 mg/L, des NT Pro-BNP à 300 ng/L. La PCR SARS-CoV-2 et la PCR grippe son négatives. Les hémocultures sont en cours. L'ECBU retrouve 2.4 hématies x10*3/mL et des leucocytes à 0.4 x10*3/mL.Quelle est votre attitude thérapeutique immédiate?","section":"DP2","qNumber":"7","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[0,2,4],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[1],"normalises":[],"correctAnswerText":"","explanation":"A. vrai : sujet âgé, diabétique, fragile. B. faux (inacceptable) : ambulatoire dangereux. C. vrai : antibiothérapie adaptée. D. faux : macrolide inadapté en première intention. E. vrai : réhydratation.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-40","type":"qcm","choices":["A. Suspicion d'endocardite à pneumocoque","B. Bronchite à Streptococcus pneumoniae","C. Pneumonie bilatérale à pneumocoque","D. Prostatite à Streptococcus pneumoniae","E. Thrombophlébite septique à pneumocoque"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"L'hémoculture revient positive à Streptococcus pneumoniae. Quel est votre diagnostic final?","section":"DP2","qNumber":"8","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[2],"singleAnswer":true,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : aucun signe d'endocardite. B. faux : il y a une pneumonie. C. vrai : pneumonie bilatérale documentée. D. faux : ECBU non évocateur. E. faux : aucun signe veineux.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-41","type":"qcm","choices":["A. Poursuite de l'amoxicilline acide clavulanique","B. relais par ceftriaxone","C. relais par clarithromycine","D. relais par amoxicilline","E. relais par levofloxacine"],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Vous aviez mis votre patient sous amoxicilline - acide clavulanique. Que décidez vous pour votre antibiothérapie?","section":"DP2","qNumber":"9","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[3],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"","explanation":"A. faux : spectre inutilement large. B. faux : céphalosporine plus large. C. faux : macrolide non adapté. D. vrai : désescalade vers amoxicilline. E. faux : fluoroquinolone à éviter.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true},{"id":"q-42","type":"qroc","choices":[],"figures":[],"choiceFigures":[],"correctionFigures":[],"context":"Vous recevez aux urgences un homme de 85 ans, diabétique de type II insulino-requérant qui est amené par sa famille pour chute et difficultés pour respirer.A l'interrogatoire, le patient rapporte une gêne pour respirer depuis 48 heures avec une fatigue importante et une faiblesse l'empêchant de tenir debout.","prompt":"Comment cette infection aurait-t-elle pu être prévenue?","section":"DP2","qNumber":"10","sourceSegmentTitle":"DP2","localization":false,"needsImage":false,"correctAnswers":[],"singleAnswer":false,"explicitNone":false,"indispensables":[],"inacceptables":[],"normalises":[],"correctAnswerText":"Vaccination antipneumococique / Vaccination antipneumoque / Vaccination pneumoque / Vaccination contre le pneumoque / Vaccin antipneumococique / pneumocoque conjugué / vaccin pneumocoque (accepté pour une partie des points : Vaccination / Vaccin)","explanation":"Le vaccin antipneumococcique conjugué prévient les infections à pneumocoque.","correctionSource":"officielle","fullyNormalized":false,"countsForScore":true}]}</script>
+<script type="module">/**
+ * @param {readonly {section?: string, sourceSegmentTitle?: string, sourceTitle?: string, qNumber?: string}[]} questions
+ * @param {number} index
+ * @param {Record<number, number>} attempts
+ * @param {number|null} [justAnswered]
+ * @returns {number|undefined}
+ */
+export function unansweredDPPrerequisite(questions, index, attempts, justAnswered = null) {
+  const dossier = (question) => (question.section?.trim() ||
+    question.sourceSegmentTitle?.trim().replace(/\s+\(\d+\/\d+\)$/, "") || "")
+    .replace(/^[eé]l[eé]ment\s+d['’][eé]preuve\s*:\s*/i, "").toLowerCase().replace(/\s+/g, " ");
+  const current = questions[index];
+  if (!current) return undefined;
+  const group = dossier(current);
+  if (!/^(?:m?dp(?=\s*\d|\b)|dossier\s+(?:progressif|patient)\b)/i.test(group)) return undefined;
+  let prerequisite;
+  for (let previous = index - 1; previous >= 0; previous--) {
+    const question = questions[previous];
+    if (question.sourceTitle !== current.sourceTitle || dossier(question) !== group ||
+      /^(?:q\.?\s*)?1$/i.test(String(questions[previous + 1].qNumber ?? "").trim())) break;
+    if (previous !== justAnswered && !(attempts[previous] > 0)) prerequisite = previous;
+  }
+  return prerequisite;
+}
+
+/**
+ * Note d'une QROC. La réponse attendue liste les réponses valides du corrigé
+ * séparées par « / » ; celles qui ne valent qu'une partie des points suivent
+ * entre parenthèses : « a / b (accepté pour une partie des points : c / d) ».
+ * Une réponse vaut 1 si elle est l'une des réponses valides, 0,5 si elle est
+ * l'une des réponses partielles, 0 sinon — sans tenir compte des majuscules,
+ * des accents, des espaces ni de la ponctuation finale.
+ * @param {string | undefined} expectedText
+ * @param {string} actualText
+ * @returns {number}
+ */
+export function scoreQroc(expectedText, actualText) {
+  const normalize = (text) => String(text ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[’`]/g, "'").replace(/\s+/g, " ").trim().replace(/[\s.;:,!?]+$/, "");
+  const actual = normalize(actualText);
+  const expected = String(expectedText ?? "").trim();
+  if (!actual || !expected) return 0;
+  const split = (text) => text.split(" / ").map(normalize).filter(Boolean);
+  const partial = expected.match(/\s*\(accepté pour une partie des points\s*:\s*(.*)\)\s*$/i);
+  const main = partial ? expected.slice(0, partial.index) : expected;
+  const full = split(main);
+  // Ancien format en un bloc : « Réponse (précision) » accepte aussi « Réponse ».
+  for (const answer of [...full]) {
+    const sansPrecision = answer.replace(/\s*\([^)]*\)\s*$/, "");
+    if (sansPrecision && sansPrecision !== answer) full.push(sansPrecision);
+  }
+  if (full.includes(actual) || normalize(expected) === actual) return 1;
+  if (partial && split(partial[1]).includes(actual)) return 0.5;
+  // Petites fautes de frappe ou d'orthographe tolérées (voir `presqueEgal`).
+  if (full.some((answer) => presqueEgal(answer, actual))) return 1;
+  if (partial && split(partial[1]).some((answer) => presqueEgal(answer, actual))) return 0.5;
+  return 0;
+}
+
+/**
+ * Une réponse « presque » égale : même texte au pluriel près (« vaccinations »
+ * pour « vaccination ») et à UNE faute près — deux à partir de 14 lettres. Les
+ * réponses courtes (moins de 5 lettres) et celles qui contiennent un nombre
+ * restent exigées à l'identique : « 33 » n'est pas « 3 », « VHB » n'est pas
+ * « VIH ». Volontairement serré : « hyperkaliémie » ne passe pas pour
+ * « hypokaliémie » (deux fautes sur douze lettres).
+ * @param {string} expected déjà normalisé
+ * @param {string} actual déjà normalisé
+ */
+function presqueEgal(expected, actual) {
+  if (expected.length < 5 || /\d/.test(expected) || /\d/.test(actual)) return false;
+  const singulier = (text) => text.split(" ").map((word) => word.length > 3 ? word.replace(/[sx]$/, "") : word).join(" ");
+  const a = singulier(expected);
+  const b = singulier(actual);
+  if (a === b) return true;
+  const tolerance = a.length >= 14 ? 2 : 1;
+  if (Math.abs(a.length - b.length) > tolerance) return false;
+  // Distance d'édition (Levenshtein), arrêtée dès qu'elle dépasse la tolérance.
+  let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i += 1) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      row[j] = Math.min(previous[j] + 1, row[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      best = Math.min(best, row[j]);
+    }
+    if (best > tolerance) return false;
+    previous = row;
+  }
+  return previous[b.length] <= tolerance;
+}
+
+/**
+ * @param {{choices: readonly string[], singleAnswer?: boolean, indispensables?: number[], inacceptables?: number[]}} q
+ * @param {number[]} expected
+ * @param {number[]} actual
+ */
+export function scoreQcm(q, expected, actual) {
+  if (q.singleAnswer) {
+    if (expected.length === 0) return Number(actual.length === 0);
+    return Number(actual.length === 1 && expected.includes(actual[0]));
+  }
+  const indispensables = q.indispensables || [];
+  const inacceptables = q.inacceptables || [];
+  const hasMissedIndispensable = indispensables.some((req) => !actual.includes(req));
+  const hasSelectedInacceptable = inacceptables.some((inacc) => actual.includes(inacc));
+  if (hasMissedIndispensable || hasSelectedInacceptable) return 0;
+  const isKFP = q.choices.length > 5;
+  if (isKFP) {
+    // Règle KFP : proportionnel x/n
+    const n = expected.length;
+    if (n === 0) return actual.length === 0 ? 1 : 0;
+    const correctChecked = actual.filter((a) => expected.includes(a)).length;
+    const incorrectChecked = actual.filter((a) => !expected.includes(a)).length;
+    // On calcule (bonnes - mauvaises) / attendues pour éviter qu'un étudiant coche toutes les cases
+    const s = (correctChecked - incorrectChecked) / n;
+    return Math.max(0, Number(s.toFixed(2)));
+  }
+  // Règle DP classique (QRM à 5 choix max)
+  let incoherences = 0;
+  for (const ans of actual) if (!expected.includes(ans)) incoherences++;
+  for (const ans of expected) if (!actual.includes(ans)) incoherences++;
+  if (incoherences === 0) return 1;
+  if (incoherences === 1) return 0.5;
+  if (incoherences === 2) return 0.2;
+  return 0;
+}
+
+// Ce fichier est inséré après quizRules.js dans le document autonome.
+// Lecteur autonome d'une annale exportée : même disposition que le lecteur du
+// site — barre du haut et panneau de navigation qui restent à l'écran pendant
+// qu'on descend dans les questions.
+/* global unansweredDPPrerequisite, scoreQcm, scoreQroc */
+const { questions } = JSON.parse(document.getElementById("soschimie-annale-data").textContent);
+const main = document.getElementById("annale");
+const panel = document.getElementById("panel");
+const tools = document.getElementById("tools");
+const position = document.getElementById("position");
+const scoreBadge = document.getElementById("score");
+let attempts = {};
+let drafts = [];
+let scores = [];
+let flagged = {};
+// Vue d'ensemble : l'élève lève le verrou des dossiers progressifs pour tout parcourir.
+let overview = false;
+const hasDossier = questions.some((_, index) => unansweredDPPrerequisite(questions, index, {}) !== undefined);
+const fermee = (index) => !overview && unansweredDPPrerequisite(questions, index, attempts) !== undefined;
+// « Une à la fois » ou « Toutes » sur une page, comme dans le lecteur du site.
+let viewMode = "one";
+let current = 0;
+let finished = false;
+// Panneau : ouvert à côté sur grand écran, tiroir sur téléphone.
+const wide = window.matchMedia("(min-width: 1024px)");
+let panelOpen = wide.matches;
+// Chronomètre de séance : le temps qui coule, sans limite, avec pause.
+const stopwatch = { accumMs: 0, since: Date.now() };
+const stopwatchMs = () => stopwatch.accumMs + (stopwatch.since === null ? 0 : Date.now() - stopwatch.since);
+const gradedTotal = questions.filter((question) => question.countsForScore).length;
+
+function element(tag, content, className) {
+  const node = document.createElement(tag);
+  if (content) node.textContent = content;
+  if (className) node.className = className;
+  return node;
+}
+
+function button(label, action, className) {
+  const control = element("button", label, className);
+  control.type = "button";
+  control.addEventListener("click", action);
+  return control;
+}
+
+// Icônes au trait (mêmes formes que celles du site), dessinées en SVG inline.
+const ICONS = {
+  lock: "M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5z",
+  unlock: "M7 11V7a5 5 0 0 1 9.9-1M5 11h14v10H5z",
+  flag: "M4 22V4M4 4h13l-2 4 2 4H4",
+  pause: "M8 5v14M16 5v14",
+  play: "M7 4l13 8-13 8z",
+  grid: "M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z",
+  pin: "M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+  close: "M6 6l12 12M18 6L6 18",
+  chevron: "M9 6l6 6-6 6",
+  back: "M15 6l-6 6 6 6",
+  one: "M4 6h4M4 12h4M4 18h4M11 6h9M11 12h9M11 18h9",
+  all: "M4 5h16v6H4zM4 13h16v6H4z",
+};
+function icon(name, className) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("class", "icon" + (className ? " " + className : ""));
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", ICONS[name]);
+  svg.append(path);
+  return svg;
+}
+
+function appendImage(container, src, alt) {
+  if (!src) return;
+  const image = element("img");
+  image.src = src;
+  image.alt = alt;
+  container.append(image);
+  return image;
+}
+
+function formatStopwatch(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const mmss = String(Math.floor((total % 3600) / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
+  return h > 0 ? h + ":" + mmss : mmss;
+}
+
+const numero = (index) => questions[index].qNumber || index + 1;
+const answeredCount = () => Object.keys(attempts).length;
+const pointsTotal = () => scores.filter((score) => typeof score === "number").reduce((total, score) => total + score, 0);
+const pendingOthers = () => questions.filter((_, i) => i !== current && !attempts[i] && !fermee(i)).length;
+
+// ---------------------------------------------------------------------------
+// Barre du haut
+// ---------------------------------------------------------------------------
+
+const clock = button("", () => {
+  if (stopwatch.since === null) stopwatch.since = Date.now();
+  else { stopwatch.accumMs = stopwatchMs(); stopwatch.since = null; }
+  renderClock();
+}, "chip clock");
+const navToggle = button("", () => { panelOpen = !panelOpen; renderPanelVisibility(); }, "chip nav-toggle");
+navToggle.setAttribute("aria-controls", "panel");
+
+// Mode clair / sombre : le réglage de l'appareil la première fois, puis le
+// choix de l'élève, mémorisé dans ce navigateur (sans jamais bloquer si le
+// stockage est indisponible, par exemple un fichier ouvert en navigation privée).
+const THEME_KEY = "soschimie-annale-theme";
+let theme = (() => {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "dark" || saved === "light") return saved;
+  } catch { /* stockage indisponible */ }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+})();
+const themeToggle = button("", () => {
+  theme = theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* stockage indisponible */ }
+  renderTheme();
+}, "chip theme-toggle");
+function renderTheme() {
+  document.documentElement.dataset.theme = theme;
+  themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+  themeToggle.title = theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre";
+  themeToggle.setAttribute("aria-label", themeToggle.title);
+}
+renderTheme();
+tools.append(themeToggle, clock, navToggle);
+
+function renderClock() {
+  const paused = stopwatch.since === null;
+  clock.replaceChildren(icon(paused ? "play" : "pause"), element("span", formatStopwatch(stopwatchMs())));
+  clock.setAttribute("aria-pressed", String(paused));
+  clock.title = paused ? "Reprendre le chronomètre" : "Mettre le chronomètre en pause";
+  clock.setAttribute("aria-label", "Chronomètre " + formatStopwatch(stopwatchMs()) + (paused ? " en pause — reprendre" : " — mettre en pause"));
+}
+
+function renderTopbar() {
+  position.textContent = finished ? "Annale terminée" : "Question " + (current + 1) + " / " + questions.length;
+  scoreBadge.textContent = pointsTotal().toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " / " + gradedTotal + " pt";
+  navToggle.replaceChildren(icon("grid"), element("span", "Navigation", "label"),
+    element("span", answeredCount() + "/" + questions.length, "count"));
+  navToggle.setAttribute("aria-expanded", String(panelOpen));
+  navToggle.setAttribute("aria-label", "Navigation");
+}
+
+function renderPanelVisibility() {
+  document.body.classList.toggle("panel-open", panelOpen);
+  navToggle.setAttribute("aria-expanded", String(panelOpen));
+}
+wide.addEventListener("change", () => { panelOpen = wide.matches; renderPanelVisibility(); });
+document.querySelector(".scrim")?.addEventListener("click", () => { panelOpen = false; renderPanelVisibility(); });
+
+// ---------------------------------------------------------------------------
+// Panneau de navigation
+// ---------------------------------------------------------------------------
+
+function tone(index) {
+  if (!attempts[index]) return (drafts[index]?.selected?.length || drafts[index]?.text?.trim()) ? "draft" : "unseen";
+  const score = scores[index];
+  if (score === null || score === undefined) return "recorded";
+  return score >= 1 ? "correct" : score > 0 ? "partial" : "wrong";
+}
+
+function renderPanel() {
+  panel.replaceChildren();
+  const head = element("div", "", "panel-head");
+  const titles = element("div");
+  const flaggedCount = Object.values(flagged).filter(Boolean).length;
+  titles.append(element("h2", "Navigation"), element("p",
+    answeredCount() + " validée" + (answeredCount() >= 2 ? "s" : "") + " · " + flaggedCount + " marquée" + (flaggedCount >= 2 ? "s" : ""), "muted small"));
+  const close = button("", () => { panelOpen = false; renderPanelVisibility(); }, "icon-button");
+  close.append(icon("close"));
+  close.setAttribute("aria-label", "Masquer la navigation");
+  head.append(titles, close);
+  panel.append(head);
+
+  const bar = element("div", "", "progress");
+  const fill = element("div");
+  fill.style.width = Math.round((answeredCount() / Math.max(questions.length, 1)) * 100) + "%";
+  bar.append(fill);
+  panel.append(bar);
+
+  const scroller = element("div", "", "tiles-scroll");
+  let group = null;
+  let groupLabel;
+  questions.forEach((question, index) => {
+    const label = question.section || "";
+    if (!group || label !== groupLabel) {
+      groupLabel = label;
+      const block = element("div", "", "group");
+      if (label) block.append(element("div", label, "group-label"));
+      group = element("div", "", "tiles");
+      block.append(group);
+      scroller.append(block);
+    }
+    const locked = fermee(index);
+    const tile = button(String(numero(index)), () => { showQuestion(index); if (!wide.matches) { panelOpen = false; renderPanelVisibility(); } }, "tile " + tone(index));
+    tile.disabled = locked;
+    if (index === current && !finished) tile.setAttribute("aria-current", "true");
+    if (locked) tile.append(icon("lock", "tile-lock"));
+    if (flagged[index]) tile.append(element("span", "", "tile-flag"));
+    tile.title = locked ? "Valide les questions précédentes de ce dossier" : "Question " + numero(index);
+    tile.setAttribute("aria-label", [question.section, "Question " + numero(index)].filter(Boolean).join(" · ")
+      + (locked ? " — verrouillée" : attempts[index] ? " — validée" : " — sans réponse") + (flagged[index] ? ", marquée" : ""));
+    group.append(tile);
+  });
+  panel.append(scroller);
+
+  const legend = element("div", "", "legend");
+  [["correct", "juste"], ["partial", "partielle"], ["wrong", "à revoir"], ["recorded", "enregistrée"], ["flagged", "marquée"]]
+    .forEach(([kind, text]) => {
+      const item = element("span");
+      item.append(element("i", "", "dot " + kind), document.createTextNode(text));
+      legend.append(item);
+    });
+  panel.append(legend);
+
+  const segment = element("div", "", "segment");
+  segment.setAttribute("role", "group");
+  segment.setAttribute("aria-label", "Affichage des questions");
+  [["one", "Une à la fois"], ["all", "Toutes"]].forEach(([mode, text]) => {
+    const control = button("", () => { viewMode = mode; showQuestion(current); }, viewMode === mode ? "active" : "");
+    control.append(icon(mode), element("span", text));
+    control.setAttribute("aria-pressed", String(viewMode === mode));
+    segment.append(control);
+  });
+  panel.append(segment);
+
+  if (hasDossier) {
+    const sw = button("", () => {
+      overview = !overview;
+      if (!fermee(current)) showQuestion(current);
+      else showQuestion(questions.findLastIndex((_, i) => i <= current && !fermee(i)));
+    }, "row switch-row");
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", String(overview));
+    sw.title = "Voir toutes les questions des dossiers, même celles qui ne sont pas encore débloquées";
+    const text = element("span", "", "row-text");
+    text.append(icon(overview ? "unlock" : "lock"), element("span", "Vue d'ensemble des dossiers"));
+    sw.append(text, element("span", "", "switch" + (overview ? " on" : "")));
+    panel.append(sw);
+  }
+
+  const others = pendingOthers();
+  if (others > 0) {
+    const pending = button("", () => {
+      const next = questions.findIndex((_, i) => i > current && !attempts[i] && !fermee(i));
+      showQuestion(next !== -1 ? next : questions.findIndex((_, i) => !attempts[i] && !fermee(i)));
+    }, "row");
+    pending.append(element("span", others + " question" + (others >= 2 ? "s" : "") + " laissée" + (others >= 2 ? "s" : "") + " de côté", "row-text"), icon("chevron"));
+    panel.append(pending);
+  }
+
+  const done = answeredCount() === questions.length;
+  const finish = button("Terminer", showResult, "finish" + (done ? " ready" : ""));
+  finish.disabled = !done;
+  finish.title = done ? "Voir mon score" : "Réponds à toutes les questions pour terminer";
+  panel.append(finish);
+}
+
+// ---------------------------------------------------------------------------
+// Question
+// ---------------------------------------------------------------------------
+
+function renderLocalization(question, draft, form, locked, update) {
+  const src = question.figures.find((figure) => !figure.placement)?.inlineUrl || question.imageUrl;
+  if (!src) {
+    form.append(element("p", question.correctionFigures.length
+      ? "Le visuel annoté est disponible dans le corrigé."
+      : "Le visuel de localisation est indisponible.", "muted"));
+    return false;
+  }
+  const frame = element("div", "", "localisation");
+  const target = element(locked ? "div" : "button", "", "zone");
+  if (!locked) {
+    target.type = "button";
+    target.setAttribute("aria-label", "Placer un point sur l’image");
+    form.append(element("p", "Clique sur l’image pour placer un point. Au clavier, utilise les flèches puis Entrée.", "muted small"));
+  }
+  appendImage(target, src, "Image de localisation");
+  frame.append(target);
+  form.append(frame);
+  const cursor = { x: 0.5, y: 0.5 };
+  const draw = () => {
+    target.querySelectorAll(".point").forEach((point) => point.remove());
+    const add = ({x, y}, label, extra) => {
+      const point = element("span", label, "point" + (extra ? " cursor" : ""));
+      point.style.left = x * 100 + "%";
+      point.style.top = y * 100 + "%";
+      point.setAttribute("aria-hidden", "true");
+      target.append(point);
+    };
+    draft.points.forEach((point, index) => add(point, String(index + 1), false));
+    if (!locked) add(cursor, "+", true);
+  };
+  if (!locked) {
+    target.addEventListener("keydown", (event) => {
+      const movement = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+      if (!movement) return;
+      event.preventDefault();
+      cursor.x = Math.max(0, Math.min(1, cursor.x + movement[0] * 0.04));
+      cursor.y = Math.max(0, Math.min(1, cursor.y + movement[1] * 0.04));
+      draw();
+    });
+    target.addEventListener("click", (event) => {
+      const bounds = target.getBoundingClientRect();
+      const point = event.detail === 0 ? { ...cursor }
+        : { x: (event.clientX - bounds.left) / bounds.width, y: (event.clientY - bounds.top) / bounds.height };
+      draft.points.push(point);
+      draw();
+      update();
+    });
+    form.append(button("Retirer le dernier point", () => { draft.points.pop(); draw(); update(); }, "link"));
+  }
+  draw();
+  return true;
+}
+
+function lockedCard(index) {
+  const question = questions[index];
+  const card = element("article", "", "card locked");
+  card.id = "question-" + index;
+  const badge = element("span", "", "lock-badge");
+  badge.append(icon("lock"));
+  const text = element("div");
+  text.append(element("strong", "Question " + numero(index) + (question.section ? " · " + question.section : "")),
+    element("p", "Se débloque quand tu auras validé la question précédente du dossier.", "muted small"));
+  card.append(badge, text);
+  return card;
+}
+
+function buildCard(index, solo) {
+  const question = questions[index];
+  const draft = drafts[index] ??= { selected: [], text: "", points: [] };
+  const locked = Boolean(attempts[index]);
+  const normalized = question.normalises ?? [];
+  const graded = (indices = []) => indices.filter((value) => !normalized.includes(value));
+  const expected = graded(question.correctAnswers);
+  const isQroc = question.type === "qroc" && !question.localization;
+  const fullyNormalized = question.fullyNormalized;
+  const card = element("article", "", "card");
+  card.id = "question-" + index;
+  if (!solo && index === current) card.classList.add("current");
+
+  const top = element("div", "", "card-top");
+  const pill = element("span", "", "section-pill");
+  pill.append(icon("pin"), element("span", question.section || question.sourceTitle || "Question"));
+  const flag = button("", () => { flagged[index] = !flagged[index]; flag.classList.toggle("on", flagged[index]); flag.setAttribute("aria-pressed", String(flagged[index])); renderPanel(); }, "icon-button flag" + (flagged[index] ? " on" : ""));
+  flag.append(icon("flag"));
+  flag.setAttribute("aria-pressed", String(Boolean(flagged[index])));
+  flag.setAttribute("aria-label", "Marquer la question " + numero(index));
+  flag.title = "Marquer pour y revenir";
+  top.append(pill, flag);
+  card.append(top);
+
+  if (question.context) card.append(element("p", question.context, "context"));
+  question.figures.filter((figure) => figure.placement === "context")
+    .forEach((figure) => appendImage(card, figure.inlineUrl, "Image du dossier"));
+  const heading = element("h2", "", "prompt");
+  heading.tabIndex = -1;
+  heading.append(element("span", "Q." + numero(index), "qnum"), document.createTextNode(" " + question.prompt));
+  card.append(heading);
+  const state = element("p", "", "state " + (locked ? "done" : "todo"));
+  state.append(element("i"), document.createTextNode(locked ? "Validée" : "Sans réponse"));
+  card.append(state);
+  if (!question.localization) {
+    const figures = question.figures.filter((figure) => !figure.placement);
+    const holder = element("div", "", "figures");
+    figures.forEach((figure, i) => appendImage(holder, figure.inlineUrl, "Schéma " + (i + 1)));
+    if (!figures.length) appendImage(holder, question.imageUrl, "Schéma de la question");
+    if (holder.childElementCount) card.append(holder);
+  }
+
+  const form = element("form");
+  const submit = element("button", question.localization ? "Voir le corrigé" : "Valider", "submit");
+  submit.type = "submit";
+  let hasLocalizationImage = false;
+  const update = () => {
+    submit.disabled = question.localization ? hasLocalizationImage && draft.points.length === 0
+      : isQroc ? !draft.text.trim() : !fullyNormalized && draft.selected.length === 0;
+  };
+  if (question.localization) {
+    hasLocalizationImage = renderLocalization(question, draft, form, locked, update);
+  } else if (isQroc) {
+    const label = element("label", "", "free-answer");
+    label.append(element("span", "Ta réponse", "muted small"));
+    const input = element("input");
+    input.type = "text";
+    input.value = draft.text;
+    input.readOnly = locked;
+    if (locked) input.classList.add(tone(index));
+    input.placeholder = "Écris ta réponse";
+    input.addEventListener("input", () => { draft.text = input.value; update(); });
+    label.append(input);
+    form.append(label);
+  } else {
+    const choices = element("fieldset", "", "options");
+    choices.append(element("legend", question.singleAnswer ? "Une seule réponse" : "Une ou plusieurs réponses", "sr-only"));
+    const addChoice = (text, value, figure) => {
+      const status = locked && (normalized.includes(value) ? "neutralisée"
+        : (value === -1 ? expected.length === 0 : expected.includes(value)) ? "attendue"
+        : draft.selected.includes(value) ? "non attendue" : "");
+      const option = element("label", "", "option");
+      if (status) option.dataset.status = status;
+      const match = /^\s*([A-Z])[.)]\s+/.exec(text);
+      option.append(element("span", value === -1 ? "∅" : match ? match[1] : String.fromCharCode(65 + value), "letter"));
+      const input = element("input");
+      input.type = question.singleAnswer ? "radio" : "checkbox";
+      input.name = "response-" + index;
+      input.checked = draft.selected.includes(value);
+      input.disabled = locked;
+      input.value = String(value);
+      const box = element("span", "", "box" + (question.singleAnswer ? " round" : ""));
+      const labelText = element("span", match ? text.slice(match[0].length) : text, "option-text");
+      if (figure) appendImage(labelText, figure.inlineUrl, "Schéma de la proposition " + (value + 1));
+      if (status) labelText.append(element("small", status === "attendue" ? "✓ attendue" : status === "non attendue" ? "✗ non attendue" : status, "verdict"));
+      option.append(input, box, labelText);
+      input.addEventListener("change", () => {
+        if (question.singleAnswer || value === -1) {
+          draft.selected = input.checked ? [value] : [];
+        } else {
+          draft.selected = draft.selected.filter((choice) => choice !== -1 && choice !== value);
+          if (input.checked) draft.selected.push(value);
+        }
+        choices.querySelectorAll("input").forEach((control) => {
+          control.checked = draft.selected.includes(Number(control.value));
+        });
+        update();
+      });
+      choices.append(option);
+    };
+    question.choices.forEach((text, value) => addChoice(text, value, question.choiceFigures[value]));
+    if (!question.explicitNone && !fullyNormalized) addChoice("Aucune de ces propositions n’est exacte", -1);
+    form.append(choices);
+  }
+  if (!locked) {
+    update();
+    form.append(submit);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (submit.disabled || attempts[index]) return;
+      const actual = graded(draft.selected.filter((choice) => choice >= 0));
+      scores[index] = !question.countsForScore ? null
+        : isQroc ? scoreQroc(question.correctAnswerText, draft.text)
+        : scoreQcm({ ...question, indispensables: graded(question.indispensables), inacceptables: graded(question.inacceptables) }, expected, actual);
+      attempts[index] = 1;
+      showQuestion(index);
+      document.querySelector("#question-" + index + " .correction")?.focus();
+    });
+  }
+  card.append(form);
+  if (locked) {
+    const feedback = element("section", "", "correction");
+    feedback.tabIndex = -1;
+    feedback.append(element("h3", "Corrigé"));
+    feedback.append(element("p", scores[index] === null ? (question.localization ? "Auto-évaluation" : "Hors barème")
+      : "Points obtenus : " + String(scores[index]).replace(".", ",") + " / 1", "points " + tone(index)));
+    if ((isQroc || question.localization) && question.correctAnswerText) {
+      feedback.append(element("p", "Réponse attendue · " + question.correctAnswerText));
+    }
+    if (question.explanation) feedback.append(element("p", question.explanation));
+    question.correctionFigures.forEach((figure, i) => appendImage(feedback, figure.inlineUrl, "Schéma du corrigé " + (i + 1)));
+    card.append(feedback);
+  }
+  if (!solo) return { card, heading };
+
+  const pager = element("div", "", "pager");
+  const prev = questions.findLastIndex((_, i) => i < index && !fermee(i));
+  const back = button("", () => showQuestion(prev), "ghost");
+  back.append(icon("back"), element("span", "Précédent"));
+  back.disabled = prev === -1;
+  pager.append(back);
+  const next = questions.findIndex((_, i) => i > index && !fermee(i));
+  const right = element("div", "", "pager-right");
+  if (questions[index + 1] && fermee(index + 1)) {
+    const hint = element("span", "", "muted small lock-hint");
+    hint.append(icon("lock"), document.createTextNode(" La question " + numero(index + 1) + " se débloque quand tu valides celle-ci."));
+    right.append(hint);
+    if (next !== -1) {
+      const skip = button("", () => showQuestion(next), "ghost");
+      skip.append(element("span", "Dossier suivant"), icon("chevron"));
+      right.append(skip);
+    }
+  } else if (next !== -1) {
+    const forward = button("", () => showQuestion(next), locked ? "primary" : "ghost");
+    forward.append(element("span", locked ? "Question suivante" : "Passer"), icon("chevron"));
+    right.append(forward);
+  } else if (answeredCount() === questions.length) {
+    right.append(button("Voir mon score", showResult, "primary"));
+  }
+  pager.append(right);
+  card.append(pager);
+  return { card, heading };
+}
+
+function showQuestion(index) {
+  if (index < 0 || fermee(index)) return;
+  finished = false;
+  current = index;
+  renderTopbar();
+  renderPanel();
+  if (viewMode === "one") {
+    const { card, heading } = buildCard(index, true);
+    main.replaceChildren(card);
+    window.scrollTo({ top: 0 });
+    heading.focus({ preventScroll: true });
+    return;
+  }
+  const cards = questions.map((_, i) => (fermee(i) ? lockedCard(i) : buildCard(i, false).card));
+  main.replaceChildren(...cards);
+  const target = cards[index];
+  const top = target.getBoundingClientRect().top + window.scrollY - (document.querySelector(".topbar")?.offsetHeight ?? 0) - 16;
+  window.scrollTo({ top: Math.max(0, top) });
+}
+
+function showResult() {
+  finished = true;
+  if (stopwatch.since !== null) { stopwatch.accumMs = stopwatchMs(); stopwatch.since = null; }
+  renderClock();
+  renderTopbar();
+  renderPanel();
+  const card = element("article", "", "card result");
+  const heading = element("h2", "Annale terminée");
+  heading.tabIndex = -1;
+  card.append(heading, element("p", gradedTotal
+    ? pointsTotal().toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " / " + gradedTotal + " points"
+    : "Annale hors barème", "big"));
+  card.append(element("p", "Temps passé : " + formatStopwatch(stopwatchMs()), "muted"));
+  card.append(button("Recommencer", () => {
+    attempts = {};
+    scores = [];
+    drafts = [];
+    flagged = {};
+    stopwatch.accumMs = 0;
+    stopwatch.since = Date.now();
+    renderClock();
+    showQuestion(0);
+  }, "primary"));
+  main.replaceChildren(card);
+  window.scrollTo({ top: 0 });
+  heading.focus({ preventScroll: true });
+}
+
+renderClock();
+setInterval(renderClock, 1000);
+renderPanelVisibility();
+if (questions.length) showQuestion(0);
+else main.append(element("p", "Cette annale ne contient aucune question."));
+</script></body></html>
